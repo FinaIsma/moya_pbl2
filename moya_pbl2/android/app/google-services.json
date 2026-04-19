@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "698348593842",
+    "project_id": "moyaapp-pbl2",
+    "storage_bucket": "moyaapp-pbl2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:698348593842:android:c14a867443162b25205fab",
+        "android_client_info": {
+          "package_name": "com.example.moya_pbl2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyChw-AN9qVWpW3Nf2oZvctNQ9GQ9U2PE-E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
