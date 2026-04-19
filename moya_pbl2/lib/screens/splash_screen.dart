@@ -1,14 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-// ─── PASTE YOUR NEXT ROUTE HERE ────────────────────────────────
-// Ganti '/login' dengan route halaman setelah splash
-const String _nextRoute = '/login';
+// ─── ROUTES ─────────────────────────────────────────────────────
+const String _routeLoggedIn  = '/dashboard'; // sudah login → dashboard
+const String _routeLoggedOut = '/opening';   // belum login → opening page
 
 // ─── ASSET PATHS ────────────────────────────────────────────────
-const String _icon1Path = 'assets/images/icon1.png';         // brain atas
-const String _iconsPath = 'assets/images/icons.png';            // folder icons
+const String _icon1Path = 'assets/images/icon1.png';
+const String _iconsCombinedPath = 'assets/images/icons.png';
 
+// ─── Helper: simpan & baca status login ─────────────────────────
+// Panggil AuthHelper.setLoggedIn(true)  saat user berhasil login
+// Panggil AuthHelper.setLoggedIn(false) saat user logout
+class AuthHelper {
+  static const String _key = 'is_logged_in';
+
+  static Future<void> setLoggedIn(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_key, value);
+  }
+
+  static Future<bool> isLoggedIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_key) ?? false; // default: belum login
+  }
+}
+
+// ────────────────────────────────────────────────────────────────
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -18,7 +37,8 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
-  // ─── Animation Controllers ──────────────────────────────────
+
+  // ─── Content animations ──────────────────────────────────────
   late AnimationController _logoController;
   late AnimationController _textController;
   late AnimationController _iconsController;
@@ -31,11 +51,18 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _iconsFade;
   late Animation<double> _subtitleFade;
 
+  // ─── Loading bar ─────────────────────────────────────────────
+  late AnimationController _loadingController;
+  late Animation<double> _loadingProgress;
+
   @override
   void initState() {
     super.initState();
+    _initAnimations();
+    _startSequence();
+  }
 
-    // Logo animation
+  void _initAnimations() {
     _logoController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -47,7 +74,6 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _logoController, curve: Curves.elasticOut),
     );
 
-    // Text animation
     _textController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -62,7 +88,6 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _textController, curve: Curves.easeOut),
     );
 
-    // Icons animation
     _iconsController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -71,7 +96,6 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _iconsController, curve: Curves.easeOut),
     );
 
-    // Subtitle animation
     _subtitleController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
@@ -80,24 +104,52 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _subtitleController, curve: Curves.easeOut),
     );
 
-    _startAnimations();
+    // Loading bar — 3 detik total
+    _loadingController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3000),
+    );
+    _loadingProgress = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _loadingController, curve: Curves.easeInOut),
+    );
   }
 
-  Future<void> _startAnimations() async {
+  Future<void> _startSequence() async {
     await Future.delayed(const Duration(milliseconds: 200));
+
+    // Logo & loading bar mulai bersamaan
     _logoController.forward();
+    _loadingController.forward();
+
     await Future.delayed(const Duration(milliseconds: 400));
     _textController.forward();
+
     await Future.delayed(const Duration(milliseconds: 300));
     _iconsController.forward();
+
     await Future.delayed(const Duration(milliseconds: 300));
     _subtitleController.forward();
 
-    // Auto navigate after 2.8s total
-    await Future.delayed(const Duration(milliseconds: 1200));
-    if (mounted) {
-      Navigator.pushReplacementNamed(context, _nextRoute);
-    }
+    // Jalankan cek session + tunggu loading bar — keduanya paralel
+    // Navigate setelah KEDUANYA selesai
+    final results = await Future.wait([
+      _checkSession(),                          // cek SharedPreferences
+      _loadingController.forward(              // tunggu bar penuh
+        from: _loadingController.value,
+      ).orCancel.then((_) => true).catchError((_) => true),
+    ]);
+
+    if (!mounted) return;
+
+    final bool loggedIn = results[0] as bool;
+    Navigator.pushReplacementNamed(
+      context,
+      loggedIn ? _routeLoggedIn : _routeLoggedOut,
+    );
+  }
+
+  Future<bool> _checkSession() async {
+    return await AuthHelper.isLoggedIn();
   }
 
   @override
@@ -106,6 +158,7 @@ class _SplashScreenState extends State<SplashScreen>
     _textController.dispose();
     _iconsController.dispose();
     _subtitleController.dispose();
+    _loadingController.dispose();
     super.dispose();
   }
 
@@ -119,115 +172,141 @@ class _SplashScreenState extends State<SplashScreen>
         child: SizedBox(
           width: size.width,
           height: size.height,
-          child: Stack(
+          child: Column(
             children: [
-              // ─── Main Column Content ──────────────────────────
-              Column(
-                children: [
-                  const SizedBox(height: 48),
+              const SizedBox(height: 48),
 
-                  // ── Top Logo Icon ────────────────────────────
-                  FadeTransition(
-                    opacity: _logoFade,
-                    child: ScaleTransition(
-                      scale: _logoScale,
-                      child: Column(
-                        children: [
-                          Image.asset(
-                            _icon1Path,
-                            width: 56,
-                            height: 56,
-                            fit: BoxFit.contain,
-                            errorBuilder: (_, __, ___) => Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF5CBCB),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: const Icon(
-                                Icons.sentiment_satisfied_alt,
-                                color: Color(0xFF748DAE),
-                                size: 32,
-                              ),
-                            ),
+              // ── Logo + Loading Bar ─────────────────────────
+              FadeTransition(
+                opacity: _logoFade,
+                child: ScaleTransition(
+                  scale: _logoScale,
+                  child: Column(
+                    children: [
+                      Image.asset(
+                        _icon1Path,
+                        width: 56,
+                        height: 56,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF5CBCB),
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                          const SizedBox(height: 10),
-                          // Garis pendek di bawah logo
-                          Container(
-                            width: 36,
-                            height: 3,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFD9D9D9),
+                          child: const Icon(
+                            Icons.sentiment_satisfied_alt,
+                            color: Color(0xFF748DAE),
+                            size: 32,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Animated Loading Bar
+                      AnimatedBuilder(
+                        animation: _loadingProgress,
+                        builder: (context, _) {
+                          return SizedBox(
+                            width: 40,
+                            height: 4,
+                            child: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
+                              child: Stack(
+                                children: [
+                                  // Track
+                                  Container(
+                                    width: 40,
+                                    height: 4,
+                                    color: const Color(0xFFE4ECF0),
+                                  ),
+                                  // Fill
+                                  Container(
+                                    width: 40 * _loadingProgress.value,
+                                    height: 4,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8),
+                                      gradient: const LinearGradient(
+                                        colors: [
+                                          Color(0xFF9ECAD6),
+                                          Color(0xFF748DAE),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          );
+                        },
                       ),
-                    ),
+                    ],
                   ),
-
-                  const SizedBox(height: 40),
-
-                  // ── Headline Text ────────────────────────────
-                  FadeTransition(
-                    opacity: _textFade,
-                    child: SlideTransition(
-                      position: _textSlide,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 40),
-                        child: Text(
-                          'Feel, Reflect,\nUnderstand',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.poppins(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF1A1A2E),
-                            height: 1.25,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 36),
-
-                  // ── Scattered Icons Area ─────────────────────
-                  FadeTransition(
-                    opacity: _iconsFade,
-                    child: SizedBox(
-                      width: size.width,
-                      height: size.width * 0.82,
-                      child: _ScatteredIcons(
-                        iconPath: _iconsPath,
-                        containerWidth: size.width,
-                        ),
-                    ),
-                  ),
-
-                  const Spacer(),
-
-                  // ── Subtitle ─────────────────────────────────
-                  FadeTransition(
-                    opacity: _subtitleFade,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 40),
-                      child: Text(
-                        'Every emotion tells a story.\nTake time to understand yours.',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          color: const Color(0xFF5A6A7E),
-                          height: 1.6,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 48),
-                ],
+                ),
               ),
+
+              const SizedBox(height: 40),
+
+              // ── Headline ────────────────────────────────────
+              FadeTransition(
+                opacity: _textFade,
+                child: SlideTransition(
+                  position: _textSlide,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    child: Text(
+                      'Feel, Reflect,\nUnderstand',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1A1A2E),
+                        height: 1.25,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 36),
+
+              // ── Scattered Icons ──────────────────────────────
+              FadeTransition(
+                opacity: _iconsFade,
+                child: SizedBox(
+                width: size.width,
+                height: size.width * 0.82,
+                child: Center(
+                  child: Image.asset(
+                    _iconsCombinedPath,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+              ),
+
+              const Spacer(),
+
+              // ── Subtitle ────────────────────────────────────
+              FadeTransition(
+                opacity: _subtitleFade,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: Text(
+                    'Every emotion tells a story.\nTake time to understand yours.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: const Color(0xFF5A6A7E),
+                      height: 1.6,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 48),
             ],
           ),
         ),
@@ -236,95 +315,3 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-// ─── Scattered Icons Widget ─────────────────────────────────────
-class _ScatteredIcons extends StatelessWidget {
-  final String iconPath;
-  final double containerWidth;
-
-  const _ScatteredIcons({
-    required this.iconPath,
-    required this.containerWidth,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Image.asset(
-        iconPath,
-        width: containerWidth * 0.9,
-        fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) => Container(
-          width: containerWidth * 0.9,
-          height: containerWidth * 0.7,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF5CBCB),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: const Icon(
-            Icons.image_not_supported,
-            size: 40,
-            color: Color(0xFF748DAE),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Fallback ketika asset belum ada ────────────────────────────
-class _FallbackIcon extends StatelessWidget {
-  final int index;
-  final double size;
-
-  const _FallbackIcon({required this.index, required this.size});
-
-  static const List<Color> _colors = [
-    Color(0xFFF5CBCB),
-    Color(0xFFF5CBCB),
-    Color(0xFFF5CBCB),
-    Color(0xFFF5CBCB),
-    Color(0xFFF5CBCB),
-    Color(0xFFFF6B6B), // merah
-    Color(0xFFFFD93D), // kuning
-    Color(0xFFADD8E6), // biru muda
-    Color(0xFFFF69B4), // pink
-  ];
-
-  static const List<IconData> _icons = [
-    Icons.mood,
-    Icons.sentiment_neutral,
-    Icons.sentiment_very_satisfied,
-    Icons.sentiment_dissatisfied,
-    Icons.sentiment_very_dissatisfied,
-    Icons.local_fire_department,
-    Icons.star,
-    Icons.water_drop,
-    Icons.favorite,
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final color = index < _colors.length
-        ? _colors[index]
-        : const Color(0xFFF5CBCB);
-    final icon = index < _icons.length
-        ? _icons[index]
-        : Icons.circle;
-
-    // Brain shapes (index 0-4) pakai rounded container
-    if (index < 5) {
-      return Container(
-        width: size,
-        height: size * 0.8,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(size * 0.35),
-        ),
-        child: Icon(icon, size: size * 0.4, color: const Color(0xFF1A1A2E)),
-      );
-    }
-
-    // Decorative items (index 5-8) lebih kecil
-    return Icon(icon, size: size, color: color);
-  }
-}
