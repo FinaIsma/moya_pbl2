@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
-// import 'screens/login_screen.dart'; // uncomment kalau sudah ada
+import 'screens/opening_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
+// import 'screens/dashboard_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Init Firebase — wajib sebelum runApp
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -13,14 +23,11 @@ void main() {
     ),
   );
 
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]);
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   runApp(const MyApp());
 }
 
-// MyApp tetap namanya sama agar widget_test.dart tidak error
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -35,15 +42,16 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/splash',
       routes: {
-        '/splash': (context) => const SplashScreen(),
-        '/login': (context) => const _PlaceholderScreen(name: 'Login'),
-        // Tambahkan route lain nanti di sini
+        '/splash':    (context) => const SplashScreen(),
+        '/opening':   (context) => const OpeningScreen(),
+        '/login':     (context) => const LoginScreen(),
+        '/register':  (context) => const RegisterScreen(),
+        '/dashboard': (context) => const _PlaceholderScreen(name: 'Dashboard'),
       },
     );
   }
 }
 
-// ─── Placeholder sementara sebelum screen lain dibuat ──────────
 class _PlaceholderScreen extends StatelessWidget {
   final String name;
   const _PlaceholderScreen({required this.name});
