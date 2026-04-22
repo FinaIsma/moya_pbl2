@@ -26,5 +26,15 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/icon1.png
+    - assets/images/icon2.png
     - assets/images/icons.png
     - assets/images/icons1.png
+    - assets/images/icon_journal.png
+    - assets/images/icon_consult.png
+    - assets/images/icon_chat.png
+    - assets/images/icon_report.png
+    - assets/images/icon_Home.png
+    - assets/images/icon_Community.png
+    - assets/images/icon_plus.png
+    - assets/images/icon_Analytics.png
+    - assets/images/icon_Profile.png
