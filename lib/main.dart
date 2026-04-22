@@ -6,7 +6,7 @@ import 'screens/splash_screen.dart';
 import 'screens/opening_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
-// import 'screens/dashboard_screen.dart';
+import 'screens/mood_input_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,6 +47,7 @@ class MyApp extends StatelessWidget {
         '/login':     (context) => const LoginScreen(),
         '/register':  (context) => const RegisterScreen(),
         '/dashboard': (context) => const _PlaceholderScreen(name: 'Dashboard'),
+        '/mood':      (context) => const MoodInputScreen(),
       },
     );
   }
