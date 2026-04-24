@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/mood.dart';
 import '../widgets/mood_card.dart';
+import 'package:intl/intl.dart';
 
 class MoodJournalPage extends StatefulWidget {
   const MoodJournalPage({super.key});
@@ -19,38 +21,31 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
   DateTime? selectedDate;
   final List<String> filters = ['All', 'This Week', 'This Month'];
 
-  List<Mood> moods = [
-    Mood(
-      time: '21.12',
-      emotion: 'Happy',
-      note: 'Hari yang menyenangkan di tempat kerja, proyek selesai...',
-      date: DateTime.now(),
-    ),
-    Mood(
-      time: '12.00',
-      emotion: 'Happy',
-      note: 'Hari yang menyenangkan di tempat kerja, proyek selesai...',
-      date: DateTime.now(),
-    ),
-    Mood(
-      time: '17.00',
-      emotion: 'Tired',
-      note: 'Hari yang menyenangkan di tempat kerja, proyek selesai...',
-      date: DateTime(2026, 4, 5),
-    ),
-    Mood(
-      time: '09.50',
-      emotion: 'Happy',
-      note: 'Hari yang menyenangkan di tempat kerja, proyek selesai...',
-      date: DateTime(2026, 4, 5),
-    ),
-    Mood(
-      time: '22.30',
-      emotion: 'Calm',
-      note: 'Hari yang menyenangkan di tempat kerja, proyek selesai...',
-      date: DateTime(2026, 4, 4),
-    ),
-  ];
+  Stream<List<Mood>> getMoodStream() {
+  return FirebaseFirestore.instance
+      .collection('moods')
+      .orderBy('createdAt', descending: true)
+      .snapshots()
+      .map((snapshot) {
+    return snapshot.docs.map((doc) {
+      final data = doc.data();
+
+      DateTime parsedDate;
+      try {
+        parsedDate = DateTime.parse(data['date']);
+      } catch (e) {
+        parsedDate = DateTime.now(); 
+      }
+
+      return Mood(
+        time: DateFormat.Hm().format(parsedDate), // 
+        emotion: data['emotion'] ?? '',
+        note: data['journal'] ?? '',
+        date: parsedDate,
+      );
+    }).toList();
+  });
+}
 
   Future<void> _pickDate(BuildContext context) async {
     final picked = await showDatePicker(
@@ -67,8 +62,9 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
     }
   }
 
-  List<Mood> get filteredMoods {
+  List<Mood> filterData(List<Mood> moods) {
     final now = DateTime.now();
+
     if (selectedDate != null) {
       return moods
           .where(
@@ -79,6 +75,7 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
           )
           .toList();
     }
+
     if (selectedFilter == 'This Week') {
       final weekStart = now.subtract(Duration(days: now.weekday % 7));
       return moods
@@ -86,38 +83,60 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
             (m) => m.date.isAfter(weekStart.subtract(const Duration(days: 1))),
           )
           .toList();
-    } else if (selectedFilter == 'This Month') {
+    }
+
+    if (selectedFilter == 'This Month') {
       return moods
           .where((m) => m.date.month == now.month && m.date.year == now.year)
           .toList();
     }
+
     return moods;
   }
 
-  Map<String, List<Mood>> get groupedMoods {
+  Map<String, List<Mood>> groupData(List<Mood> moods) {
     final Map<String, List<Mood>> map = {};
     final now = DateTime.now();
-    for (var mood in filteredMoods) {
+
+    for (var mood in moods) {
       String label;
+
       if (mood.date.year == now.year &&
           mood.date.month == now.month &&
           mood.date.day == now.day) {
         label = 'Today';
       } else {
         final days = [
-          'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-          'Friday', 'Saturday', 'Sunday',
+          'Monday',
+          'Tuesday',
+          'Wednesday',
+          'Thursday',
+          'Friday',
+          'Saturday',
+          'Sunday',
         ];
         final months = [
-          'January', 'February', 'March', 'April',
-          'May', 'June', 'July', 'August',
-          'September', 'October', 'November', 'December',
+          'January',
+          'February',
+          'March',
+          'April',
+          'May',
+          'June',
+          'July',
+          'August',
+          'September',
+          'October',
+          'November',
+          'December',
         ];
+
         label =
             '${days[mood.date.weekday - 1]}, ${months[mood.date.month - 1]} ${mood.date.day.toString().padLeft(2, '0')}';
       }
+
       map.putIfAbsent(label, () => []).add(mood);
     }
+
     return map;
   }
 
@@ -130,17 +149,30 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
           children: [
             _buildAppBar(context),
             _buildFilterRow(context),
+
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
-                ),
-                children: [
-                  ...groupedMoods.entries.map(
-                    (entry) => _buildSection(entry.key, entry.value),
-                  ),
-                ],
+              child: StreamBuilder<List<Mood>>(
+                stream: getMoodStream(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  final moods = filterData(snapshot.data!);
+                  final grouped = groupData(moods);
+
+                  return ListView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
+                    children: [
+                      ...grouped.entries.map(
+                        (entry) => _buildSection(entry.key, entry.value),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ],
@@ -163,11 +195,7 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
                 color: accentPink,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Image.asset(
-                'assets/images/back.png',
-                width: 20,
-                height: 20,
-              ),
+              child: Image.asset('assets/images/back.png'),
             ),
           ),
           const SizedBox(width: 12),
@@ -190,78 +218,33 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
       child: Row(
         children: [
           ...filters.map(
-            (f) => Padding(
-              padding: const EdgeInsets.only(right: 6),
-              child: GestureDetector(
-                onTap: () => setState(() {
-                  selectedFilter = f;
-                  selectedDate = null;
-                }),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 15, 
-                    vertical: 7,    
-                  ),
-                  decoration: BoxDecoration(
-                    color: selectedFilter == f && selectedDate == null
-                        ? secondaryBlue
-                        : primaryBlue,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    f,
-                    style: const TextStyle(
-                      color: Color.fromARGB(255, 0, 0, 0),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12, // ✅ dikecilkan dari 13
-                    ),
-                  ),
+            (f) => GestureDetector(
+              onTap: () => setState(() {
+                selectedFilter = f;
+                selectedDate = null;
+              }),
+              child: Container(
+                margin: const EdgeInsets.only(right: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 15,
+                  vertical: 7,
                 ),
+                decoration: BoxDecoration(
+                  color: selectedFilter == f ? secondaryBlue : primaryBlue,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(f),
               ),
             ),
           ),
           const Spacer(),
-
-          if (selectedDate != null) ...[
-            GestureDetector(
-              onTap: () => setState(() => selectedDate = null),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: secondaryBlue,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year.toString().substring(2)}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12, 
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.close, color: Colors.white, size: 12),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 6),
-          ],
-
-          // Tombol kalender
           GestureDetector(
             onTap: () => _pickDate(context),
             child: Container(
-              width: 32, 
+              width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: selectedDate != null ? secondaryBlue : primaryBlue,
+                color: primaryBlue,
                 borderRadius: BorderRadius.circular(10),
               ),
               padding: const EdgeInsets.all(6),
@@ -288,7 +271,7 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
                 borderRadius: BorderRadius.circular(8),
               ),
               padding: const EdgeInsets.all(6),
-              child: Image.asset('assets/images/note.png', fit: BoxFit.contain),
+              child: Image.asset('assets/images/note.png'),
             ),
             const SizedBox(width: 12),
             Text(
