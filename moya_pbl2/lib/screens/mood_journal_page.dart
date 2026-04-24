@@ -42,6 +42,7 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
         emotion: data['emotion'] ?? '',
         note: data['journal'] ?? '',
         date: parsedDate,
+        moodIndex: data['moodIndex'] ?? 0,
       );
     }).toList();
   });

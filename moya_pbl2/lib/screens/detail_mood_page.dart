@@ -5,11 +5,32 @@ class DetailMoodPage extends StatelessWidget {
   final Mood mood;
   const DetailMoodPage({super.key, required this.mood});
 
+  String getMoodImage(int i) {
+    const list = [
+      'assets/images/emot1.png',
+      'assets/images/emot2.png',
+      'assets/images/emot3.png',
+      'assets/images/emot4.png',
+      'assets/images/emot5.png',
+    ];
+    return list[(i >= 0 && i < list.length) ? i : 0];
+  }
+
+  String getEmotionImage(String e) {
+    switch (e.toLowerCase()) {
+      case 'happy': return 'assets/images/Happy.png';
+      case 'sad': return 'assets/images/Sad.png';
+      case 'angry': return 'assets/images/Angry.png';
+      case 'stressed': return 'assets/images/Stressed.png';
+      case 'tired': return 'assets/images/Tired.png';
+      case 'relaxed': return 'assets/images/Relaxed.png';
+      case 'grateful': return 'assets/images/Grateful.png';
+      default: return 'assets/images/icon1.png';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final months = ['January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'];
-
     final dateStr =
         '${mood.date.day.toString().padLeft(2, '0')}/${mood.date.month.toString().padLeft(2, '0')}/${mood.date.year}';
 
@@ -66,21 +87,16 @@ class DetailMoodPage extends StatelessWidget {
                 children: [
                   // Emoji column
                   Container(
-                    width: 60,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
                     decoration: BoxDecoration(
                       color: const Color(0xFF748DAE),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(30),
                     ),
                     child: Column(
                       children: [
-                        _emojiCircle('assets/images/happy.png', selected: true),
-                        const SizedBox(height: 8),
-                        _emojiCircle('assets/images/happy.png'),
-                        const SizedBox(height: 8),
-                        _emojiCircle('assets/images/happy.png'),
-                        const SizedBox(height: 8),
-                        _emojiCircle('assets/images/happy.png'),
+                        _circle(getMoodImage(mood.moodIndex), size: 48),
+                        const SizedBox(height: 12),
+                        _circle(getEmotionImage(mood.emotion), size: 36),
                       ],
                     ),
                   ),
@@ -183,14 +199,14 @@ class DetailMoodPage extends StatelessWidget {
     );
   }
 
-  Widget _emojiCircle(String asset, {bool selected = false}) {
+  Widget _circle(String asset, {double size = 36}) {
     return Container(
-      width: 44,
-      height: 44,
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
+      width: size,
+      height: size,
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      decoration: const BoxDecoration(
         shape: BoxShape.circle,
-        color: selected ? Colors.white : const Color(0xFF9ECAD6),
+        color: Colors.white,
       ),
       padding: const EdgeInsets.all(6),
       child: Image.asset(asset, fit: BoxFit.contain),
