@@ -189,7 +189,6 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         children: [
-          // ✅ Filter chips dikecilkan supaya konsisten
           ...filters.map(
             (f) => Padding(
               padding: const EdgeInsets.only(right: 6),
@@ -223,7 +222,6 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
           ),
           const Spacer(),
 
-          // ✅ Chip tanggal konsisten sama filter chip
           if (selectedDate != null) ...[
             GestureDetector(
               onTap: () => setState(() => selectedDate = null),
@@ -244,7 +242,7 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
-                        fontSize: 12, // ✅ sama dengan chip lain
+                        fontSize: 12, 
                       ),
                     ),
                     const SizedBox(width: 4),
@@ -260,7 +258,7 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
           GestureDetector(
             onTap: () => _pickDate(context),
             child: Container(
-              width: 32, // ✅ dikecilkan dari 38
+              width: 32, 
               height: 32,
               decoration: BoxDecoration(
                 color: selectedDate != null ? secondaryBlue : primaryBlue,
