@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dashboard_screen.dart';
+import 'mood_input_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -40,7 +41,7 @@ class _MainNavigationState extends State<MainNavigation> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const AddJournalScreen()),
+                MaterialPageRoute(builder: (context) => MoodInputScreen()),
               );
             },
             backgroundColor: const Color(0xFFF3C4D3),
@@ -112,26 +113,6 @@ class _MainNavigationState extends State<MainNavigation> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class AddJournalScreen extends StatelessWidget {
-  const AddJournalScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text("Add Journal", style: TextStyle(color: Color(0xFF2D3748))),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF2D3748)),
-      ),
-      body: const Center(
-        child: Text("Halaman Add Journal\n(Navbar tidak ditampilkan di sini!)", textAlign: TextAlign.center),
       ),
     );
   }
