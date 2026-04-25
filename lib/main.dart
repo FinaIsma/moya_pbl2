@@ -7,6 +7,7 @@ import 'screens/opening_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/mood_input_screen.dart';
+import 'screens/mood_journal_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,7 +41,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: Colors.white,
       ),
-      initialRoute: '/splash',
+      initialRoute: '/mood-journal',
       routes: {
         '/splash':    (context) => const SplashScreen(),
         '/opening':   (context) => const OpeningScreen(),
@@ -48,6 +49,7 @@ class MyApp extends StatelessWidget {
         '/register':  (context) => const RegisterScreen(),
         '/dashboard': (context) => const _PlaceholderScreen(name: 'Dashboard'),
         '/mood':      (context) => const MoodInputScreen(),
+        '/mood-journal': (context) => const MoodJournalPage(),
       },
     );
   }
