@@ -16,6 +16,7 @@ dependencies:
   firebase_core: ^3.6.0
   firebase_auth: ^5.3.1
   cloud_firestore: ^5.4.4
+  intl: ^0.18.1
 
 dev_dependencies:
   flutter_test:
@@ -41,3 +42,8 @@ flutter:
     - assets/images/Desperate.png
     - assets/images/Sad.png
     - assets/images/Grateful.png
+    - assets/images/back.png
+    - assets/images/calendar.png
+    - assets/images/note.png
+    - assets/images/arrow_right.png
+    
