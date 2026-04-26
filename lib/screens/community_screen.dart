@@ -1,0 +1,454 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'post_detail_screen.dart';
+import 'create_post_screen.dart';
+import '../helpers/display_name_helper.dart';
+
+class CommunityScreen extends StatefulWidget {
+  const CommunityScreen({super.key});
+
+  @override
+  State<CommunityScreen> createState() => _CommunityScreenState();
+}
+
+class _CommunityScreenState extends State<CommunityScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final _currentUser = FirebaseAuth.instance.currentUser;
+
+  static const _primary   = Color(0xFF9ECAD6);
+  static const _secondary = Color(0xFF748DAE);
+  static const _accent    = Color(0xFFF5CBCB);
+  static const _textMain  = Color(0xFF1A1A2E);
+  static const _textSub   = Color(0xFF5A6A7E);
+
+  static const List<Color> _avatarColors = [
+    Color(0xFFD4A574), Color(0xFF9B8DB4), Color(0xFF7BAE8F),
+    Color(0xFF748DAE), Color(0xFFE07B8A), Color(0xFF9ECAD6),
+  ];
+
+  Color _getAvatarColor(String uid) =>
+      _avatarColors[uid.hashCode.abs() % _avatarColors.length];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  String _formatTime(Timestamp? ts) {
+    if (ts == null) return '';
+    final diff = DateTime.now().difference(ts.toDate());
+    if (diff.inSeconds < 60) return '${diff.inSeconds} seconds ago';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} minutes ago';
+    if (diff.inHours < 24)   return '${diff.inHours} hours ago';
+    return '${diff.inDays} days ago';
+  }
+
+  String _formatLikes(int count) {
+    if (count >= 1000) return '${(count / 1000).toStringAsFixed(0)}K';
+    return count.toString();
+  }
+
+  Future<void> _toggleLike(String postId, List likes) async {
+    final uid = _currentUser?.uid ?? '';
+    final ref = FirebaseFirestore.instance
+        .collection('community_posts')
+        .doc(postId);
+    if (likes.contains(uid)) {
+      await ref.update({'likes': FieldValue.arrayRemove([uid])});
+    } else {
+      await ref.update({'likes': FieldValue.arrayUnion([uid])});
+    }
+  }
+
+  Future<void> _deletePost(String postId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text('Hapus Post?',
+          style: GoogleFonts.poppins(
+            fontSize: 17, fontWeight: FontWeight.w700, color: _textMain,
+          ),
+        ),
+        content: Text('Post ini akan dihapus permanen.',
+          style: GoogleFonts.poppins(fontSize: 14, color: _textSub),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Batal',
+              style: GoogleFonts.poppins(fontSize: 14, color: _textSub),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('Hapus',
+              style: GoogleFonts.poppins(
+                fontSize: 14, fontWeight: FontWeight.w600,
+                color: const Color(0xFFE07B7B),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await FirebaseFirestore.instance
+          .collection('community_posts')
+          .doc(postId)
+          .delete();
+    }
+  }
+
+  // ─── Post Card ───────────────────────────────────────────────
+  Widget _buildPostCard(DocumentSnapshot doc, {bool showDelete = false}) {
+    final data   = doc.data() as Map<String, dynamic>;
+    final postId = doc.id;
+    final uid    = data['uid'] as String? ?? '';
+    final likes  = List.from(data['likes'] ?? []);
+    final liked  = likes.contains(_currentUser?.uid ?? '');
+    final ts     = data['createdAt'] as Timestamp?;
+    final isOwn  = DisplayNameHelper.isCurrentUser(uid);
+
+    return FutureBuilder<String>(
+      future: DisplayNameHelper.getDisplayName(uid),
+      builder: (context, nameSnap) {
+        final displayName = nameSnap.data ?? (isOwn ? 'You' : 'Anonymous...');
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Avatar + username + time ──
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: isOwn
+                      ? _secondary
+                      : _getAvatarColor(uid),
+                  child: const Icon(Icons.person, color: Colors.white, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(displayName,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14, fontWeight: FontWeight.w600,
+                              color: _textMain,
+                            ),
+                          ),
+                          // Badge "You" kalau post sendiri
+                          if (isOwn) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _primary.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text('You',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 10, fontWeight: FontWeight.w600,
+                                  color: _secondary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      Text(_formatTime(ts),
+                        style: GoogleFonts.poppins(
+                          fontSize: 12, color: _textSub,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Delete button — hanya di My Posts
+                if (showDelete)
+                  GestureDetector(
+                    onTap: () => _deletePost(postId),
+                    child: Container(
+                      width: 32, height: 32,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFEAEA),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: Color(0xFFE07B7B), size: 18,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+
+            const SizedBox(height: 10),
+
+            // ── Content card — tap untuk buka detail ──
+            GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PostDetailScreen(postId: postId),
+                ),
+              ),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE4ECF0)),
+                ),
+                child: Text(data['content'] ?? '',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13, color: _textMain, height: 1.6,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // ── Like + Reply ──
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                GestureDetector(
+                  onTap: () => _toggleLike(postId, likes),
+                  child: Row(
+                    children: [
+                      Icon(
+                        liked ? Icons.favorite : Icons.favorite_border,
+                        color: liked ? Colors.red : const Color(0xFFABB8C3),
+                        size: 22,
+                      ),
+                      if (likes.isNotEmpty) ...[
+                        const SizedBox(width: 4),
+                        Text(_formatLikes(likes.length),
+                          style: GoogleFonts.poppins(
+                            fontSize: 13, color: _textSub,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 14),
+                // Reply button → buka detail
+                GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PostDetailScreen(postId: postId),
+                    ),
+                  ),
+                  child: Container(
+                    width: 36, height: 36,
+                    decoration: const BoxDecoration(
+                      color: _secondary, shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.reply_rounded, color: Colors.white, size: 18,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 8),
+            const Divider(color: Color(0xFFE4ECF0)),
+            const SizedBox(height: 8),
+          ],
+        );
+      },
+    );
+  }
+
+  // ─── All Posts ───────────────────────────────────────────────
+  Widget _buildAllPosts() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('community_posts')
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snap) {
+        if (!snap.hasData) {
+          return const Center(child: CircularProgressIndicator(color: _primary));
+        }
+        final docs = snap.data!.docs;
+        if (docs.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.people_outline, size: 60, color: _accent),
+                const SizedBox(height: 12),
+                Text('Belum ada post.',
+                  style: GoogleFonts.poppins(fontSize: 14, color: _textSub),
+                ),
+                Text('Jadilah yang pertama berbagi!',
+                  style: GoogleFonts.poppins(fontSize: 13, color: _textSub),
+                ),
+              ],
+            ),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          itemCount: docs.length,
+          itemBuilder: (_, i) => _buildPostCard(docs[i]),
+        );
+      },
+    );
+  }
+
+  // ─── My Posts ────────────────────────────────────────────────
+  Widget _buildMyPosts() {
+    final uid = _currentUser?.uid ?? '';
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('community_posts')
+          .where('uid', isEqualTo: uid)
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snap) {
+        if (!snap.hasData) {
+          return const Center(child: CircularProgressIndicator(color: _primary));
+        }
+        final docs = snap.data!.docs;
+        if (docs.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.edit_note_outlined, size: 60, color: _accent),
+                const SizedBox(height: 12),
+                Text('Kamu belum punya post.',
+                  style: GoogleFonts.poppins(fontSize: 14, color: _textSub),
+                ),
+                const SizedBox(height: 4),
+                Text('Tap ✏️ untuk mulai berbagi.',
+                  style: GoogleFonts.poppins(fontSize: 13, color: _textSub),
+                ),
+              ],
+            ),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          itemCount: docs.length,
+          itemBuilder: (_, i) => _buildPostCard(docs[i], showDelete: true),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isMyPosts = _tabController.index == 1;
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // ── Header ──────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: Row(
+                children: [
+                  Image.asset(
+                    'assets/images/icon1.png',
+                    width: 52, height: 52,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: 52, height: 52,
+                      decoration: BoxDecoration(
+                        color: _accent,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(Icons.people, color: _secondary, size: 28),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text('Support Community',
+                    style: GoogleFonts.poppins(
+                      fontSize: 22, fontWeight: FontWeight.w800, color: _textMain,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // ── Tab Bar ──────────────────────────────────────
+            TabBar(
+              controller: _tabController,
+              labelStyle: GoogleFonts.poppins(
+                fontSize: 14, fontWeight: FontWeight.w700,
+              ),
+              unselectedLabelStyle: GoogleFonts.poppins(
+                fontSize: 14, fontWeight: FontWeight.w400,
+              ),
+              labelColor: _textMain,
+              unselectedLabelColor: _textSub,
+              indicatorColor: _primary,
+              indicatorWeight: 2.5,
+              tabs: const [
+                Tab(text: 'All Posts'),
+                Tab(text: 'My Posts'),
+              ],
+            ),
+
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildAllPosts(),
+                  _buildMyPosts(),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+
+      // FAB hanya muncul di tab My Posts
+      floatingActionButton: isMyPosts
+          ? FloatingActionButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CreatePostScreen()),
+              ),
+              backgroundColor: _secondary,
+              elevation: 4,
+              shape: const CircleBorder(),
+              child: const Icon(Icons.edit_rounded, color: Colors.white, size: 24),
+            )
+          : null,
+    );
+  }
+}
