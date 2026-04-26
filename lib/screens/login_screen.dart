@@ -178,11 +178,12 @@ class _LoginScreenState extends State<LoginScreen>
                   child: Form(
                     key: _formKey,
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         // Welcome Back
                         Text(
                           'Welcome Back!',
+                          textAlign: TextAlign.center,
                           style: GoogleFonts.poppins(
                             fontSize: 32,
                             fontWeight: FontWeight.w700,
