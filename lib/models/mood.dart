@@ -1,13 +1,13 @@
 class Mood {
   final String time;
-  final String emotion;
+  final List<String> emotions;
   final String note;
   final DateTime date;
   final int moodIndex;
 
   Mood({
     required this.time,
-    required this.emotion,
+    required this.emotions,
     required this.note,
     required this.date,
     required this.moodIndex,
@@ -29,7 +29,7 @@ class Mood {
     "${parsedDate.hour.toString().padLeft(2, '0')}:${parsedDate.minute.toString().padLeft(2, '0')}";
     return Mood(
       moodIndex: data['mood'] ?? 0,       
-      emotion: data['emotion'] ?? '',
+      emotions: List<String>.from(data['emotions'] ?? []),
       note: data['journal'] ?? '',
       date: parsedDate,
       time: formattedTime,

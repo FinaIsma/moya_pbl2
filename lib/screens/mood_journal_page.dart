@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/mood.dart';
 import '../widgets/mood_card.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class MoodJournalPage extends StatefulWidget {
   const MoodJournalPage({super.key});
@@ -22,10 +23,12 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
   final List<String> filters = ['All', 'This Week', 'This Month'];
 
   Stream<List<Mood>> getMoodStream() {
-  return FirebaseFirestore.instance
-      .collection('moods')
-      .orderBy('createdAt', descending: true)
-      .snapshots()
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    return FirebaseFirestore.instance
+        .collection('moods')
+        .where('userId', isEqualTo: userId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
       .map((snapshot) {
     return snapshot.docs.map((doc) {
       final data = doc.data();
@@ -37,11 +40,9 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
         parsedDate = DateTime.now(); 
       }
 
-      print("DATA FIREBASE: $data");
-      print("MOOD INDEX: ${data['mood']}");
       return Mood(
         time: DateFormat.Hm().format(parsedDate), // Format time as HH:mm
-        emotion: data['emotion'] ?? '',
+        emotions: List<String>.from(data['emotions'] ?? []),
         note: data['journal'] ?? '',
         date: parsedDate,
         moodIndex: data['mood'] ?? 0,
