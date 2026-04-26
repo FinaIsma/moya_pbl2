@@ -10,7 +10,7 @@ class Mood {
     required this.emotions,
     required this.note,
     required this.date,
-    required this.moodIndex,
+    required this.moodIndex, 
   });
 
   factory Mood.fromFirestore(Map<String, dynamic> data) {

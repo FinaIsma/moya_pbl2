@@ -17,16 +17,15 @@ class DetailMoodPage extends StatelessWidget {
   }
 
   String getEmotionImage(String e) {
-    switch (e) {
-      case 'Happy':     return 'assets/images/Happy.png';
-      case 'Tired':     return 'assets/images/Tired.png';
-      case 'Angry':     return 'assets/images/Angry.png';
-      case 'Stressed':  return 'assets/images/Stressed.png';
-      case 'Relaxed':   return 'assets/images/Relaxed.png';
-      case 'Desperate': return 'assets/images/Desperate.png';
-      case 'Sad':       return 'assets/images/Sad.png';
-      case 'Grateful':  return 'assets/images/Grateful.png';
-      default:          return 'assets/images/Happy.png';
+    switch (e.toLowerCase()) {
+      case 'happy': return 'assets/images/Happy.png';
+      case 'sad': return 'assets/images/Sad.png';
+      case 'angry': return 'assets/images/Angry.png';
+      case 'stressed': return 'assets/images/Stressed.png';
+      case 'tired': return 'assets/images/Tired.png';
+      case 'relaxed': return 'assets/images/Relaxed.png';
+      case 'grateful': return 'assets/images/Grateful.png';
+      default: return 'assets/images/icon1.png';
     }
   }
 
@@ -86,7 +85,7 @@ class DetailMoodPage extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Emoji column kiri
+                  // Emoji column
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
                     decoration: BoxDecoration(
@@ -95,11 +94,9 @@ class DetailMoodPage extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        // Mood utama (besar)
-                        _circle(getMoodImage(mood.moodIndex), '', size: 48),
-                        const SizedBox(height: 8),
-                        // Emotion list (max 3)
-                        ...mood.emotions.map((e) => _circle(getEmotionImage(e), e)),
+                        _circle(getMoodImage(mood.moodIndex), size: 48),
+                        const SizedBox(height: 12),
+                        _circle(getEmotionImage(mood.emotions.first), size: 36),
                       ],
                     ),
                   ),
@@ -202,20 +199,17 @@ class DetailMoodPage extends StatelessWidget {
     );
   }
 
-  Widget _circle(String asset, String label, {double size = 36}) {
-    return Tooltip(
-      message: label,
-      child: Container(
-        width: size,
-        height: size,
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white,
-        ),
-        padding: const EdgeInsets.all(6),
-        child: Image.asset(asset, fit: BoxFit.contain),
+  Widget _circle(String asset, {double size = 36}) {
+    return Container(
+      width: size,
+      height: size,
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white,
       ),
+      padding: const EdgeInsets.all(6),
+      child: Image.asset(asset, fit: BoxFit.contain),
     );
   }
 }

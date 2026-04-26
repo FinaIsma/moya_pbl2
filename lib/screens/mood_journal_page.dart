@@ -39,7 +39,7 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
       } catch (e) {
         parsedDate = DateTime.now(); 
       }
-
+      
       return Mood(
         time: DateFormat.Hm().format(parsedDate), // Format time as HH:mm
         emotions: List<String>.from(data['emotions'] ?? []),
