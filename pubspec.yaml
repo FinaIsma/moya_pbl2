@@ -17,6 +17,11 @@ dependencies:
   firebase_auth: ^5.3.1
   cloud_firestore: ^5.4.4
   intl: ^0.18.1
+  image_picker: ^1.0.7
+  firebase_storage: ^12.4.10
+  cloudflare_r2: ^0.0.14
+  http: ^1.6.0
+  http_parser: ^4.1.2
 
 dev_dependencies:
   flutter_test:
