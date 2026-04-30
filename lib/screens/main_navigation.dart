@@ -85,7 +85,6 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 
   Widget _buildNavItem(String iconPath, String label, int index) {
-
     bool isSelected = _selectedIndex == index;
 
     Color itemColor = isSelected ? const Color(0xFF2D3748) : const Color(0xFF5A6A7E);
