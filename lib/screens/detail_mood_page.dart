@@ -18,14 +18,22 @@ class DetailMoodPage extends StatelessWidget {
 
   String getEmotionImage(String e) {
     switch (e.toLowerCase()) {
-      case 'happy': return 'assets/images/Happy.png';
-      case 'sad': return 'assets/images/Sad.png';
-      case 'angry': return 'assets/images/Angry.png';
-      case 'stressed': return 'assets/images/Stressed.png';
-      case 'tired': return 'assets/images/Tired.png';
-      case 'relaxed': return 'assets/images/Relaxed.png';
-      case 'grateful': return 'assets/images/Grateful.png';
-      default: return 'assets/images/icon1.png';
+      case 'happy':
+        return 'assets/images/Happy.png';
+      case 'sad':
+        return 'assets/images/Sad.png';
+      case 'angry':
+        return 'assets/images/Angry.png';
+      case 'stressed':
+        return 'assets/images/Stressed.png';
+      case 'tired':
+        return 'assets/images/Tired.png';
+      case 'relaxed':
+        return 'assets/images/Relaxed.png';
+      case 'grateful':
+        return 'assets/images/Grateful.png';
+      default:
+        return 'assets/images/icon1.png';
     }
   }
 
@@ -87,7 +95,10 @@ class DetailMoodPage extends StatelessWidget {
                 children: [
                   // Emoji column
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF748DAE),
                       borderRadius: BorderRadius.circular(30),
@@ -109,7 +120,10 @@ class DetailMoodPage extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFF9ECAD6), width: 1.2),
+                        border: Border.all(
+                          color: const Color(0xFF9ECAD6),
+                          width: 1.2,
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,14 +145,104 @@ class DetailMoodPage extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF0F4F8),
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0xFF9ECAD6), width: 1),
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  Icons.image_outlined,
-                                  color: Colors.grey.shade400,
-                                  size: 40,
+                                border: Border.all(
+                                  color: const Color(0xFF9ECAD6),
+                                  width: 1,
                                 ),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child:
+                                    mood.photoUrl != null &&
+                                        mood.photoUrl!.isNotEmpty
+                                    ? GestureDetector(
+                                        onTap: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (_) => Dialog(
+                                              backgroundColor: Colors.black,
+                                              insetPadding: EdgeInsets.zero,
+                                              child: Stack(
+                                                children: [
+                                                  InteractiveViewer(
+                                                    child: Center(
+                                                      child: Image.network(
+                                                        mood.photoUrl!,
+                                                        fit: BoxFit.contain,
+                                                        width: double.infinity,
+                                                        height: double.infinity,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Positioned(
+                                                    top: 40,
+                                                    right: 16,
+                                                    child: GestureDetector(
+                                                      onTap: () =>
+                                                          Navigator.pop(
+                                                            context,
+                                                          ),
+                                                      child: Container(
+                                                        padding:
+                                                            const EdgeInsets.all(
+                                                              8,
+                                                            ),
+                                                        decoration:
+                                                            const BoxDecoration(
+                                                              color: Colors
+                                                                  .white24,
+                                                              shape: BoxShape
+                                                                  .circle,
+                                                            ),
+                                                        child: const Icon(
+                                                          Icons.close,
+                                                          color: Colors.white,
+                                                          size: 24,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        child: Image.network(
+                                          mood.photoUrl!,
+                                          fit: BoxFit.cover,
+                                          width: double.infinity,
+                                          loadingBuilder:
+                                              (
+                                                context,
+                                                child,
+                                                loadingProgress,
+                                              ) {
+                                                if (loadingProgress == null)
+                                                  return child;
+                                                return const Center(
+                                                  child:
+                                                      CircularProgressIndicator(),
+                                                );
+                                              },
+                                          errorBuilder:
+                                              (context, error, stackTrace) {
+                                                return Center(
+                                                  child: Icon(
+                                                    Icons.broken_image_outlined,
+                                                    color: Colors.grey.shade400,
+                                                    size: 40,
+                                                  ),
+                                                );
+                                              },
+                                        ),
+                                      )
+                                    : Center(
+                                        child: Icon(
+                                          Icons.image_outlined,
+                                          color: Colors.grey.shade400,
+                                          size: 40,
+                                        ),
+                                      ),
                               ),
                             ),
                           ),
@@ -157,7 +261,10 @@ class DetailMoodPage extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFF9ECAD6), width: 1.2),
+                  border: Border.all(
+                    color: const Color(0xFF9ECAD6),
+                    width: 1.2,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,7 +284,10 @@ class DetailMoodPage extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: const Color(0xFFF0F4F8),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFF9ECAD6), width: 1),
+                        border: Border.all(
+                          color: const Color(0xFF9ECAD6),
+                          width: 1,
+                        ),
                       ),
                       child: Text(
                         mood.note,
