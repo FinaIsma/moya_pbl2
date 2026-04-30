@@ -116,7 +116,7 @@ class DetailMoodPage extends StatelessWidget {
                   // Photo box
                   Expanded(
                     child: Container(
-                      height: 200,
+                      height: 240,
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(14),
