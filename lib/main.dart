@@ -9,6 +9,7 @@ import 'screens/register_screen.dart';
 import 'screens/mood_input_screen.dart';
 import 'screens/mood_journal_page.dart';
 import 'screens/main_navigation.dart';
+import 'screens/profile_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -51,6 +52,7 @@ class MyApp extends StatelessWidget {
         '/dashboard': (context) => const MainNavigation(),
         '/mood':      (context) => const MoodInputScreen(),
         '/mood-journal': (context) => const MoodJournalPage(),
+        '/profile':   (context) => const ProfileScreen(),
       },
     );
   }
