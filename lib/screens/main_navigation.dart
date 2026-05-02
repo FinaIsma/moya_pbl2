@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dashboard_screen.dart';
 import 'mood_input_screen.dart';
+import 'profile_screen.dart';
 import 'community_screen.dart';
 
 class MainNavigation extends StatefulWidget {
@@ -18,7 +19,7 @@ class _MainNavigationState extends State<MainNavigation> {
     const DashboardScreen(),
     const CommunityScreen(),
     const Center(child: Text('Analytics Page (Coming Soon)', style: TextStyle(fontSize: 20))),
-    const Center(child: Text('Profile Page (Coming Soon)', style: TextStyle(fontSize: 20))),
+    const ProfileScreen(),
   ];
 
   void _onItemTapped(int index) {
