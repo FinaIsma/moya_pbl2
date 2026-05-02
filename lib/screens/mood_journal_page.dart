@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/mood.dart';
 import '../widgets/mood_card.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class MoodJournalPage extends StatefulWidget {
   const MoodJournalPage({super.key});
@@ -22,33 +23,39 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
   final List<String> filters = ['All', 'This Week', 'This Month'];
 
   Stream<List<Mood>> getMoodStream() {
-  return FirebaseFirestore.instance
-      .collection('moods')
-      .orderBy('createdAt', descending: true)
-      .snapshots()
-      .map((snapshot) {
-    return snapshot.docs.map((doc) {
-      final data = doc.data();
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return const Stream.empty();
 
-      DateTime parsedDate;
-      try {
-        parsedDate = DateTime.parse(data['date']);
-      } catch (e) {
-        parsedDate = DateTime.now(); 
-      }
+    return FirebaseFirestore.instance
+        .collection('moods')
+        .where('userId', isEqualTo: userId)
+        .snapshots()
+        .map((snapshot) {
+          final moods = snapshot.docs.map((doc) {
+            final data = doc.data();
 
-      print("DATA FIREBASE: $data");
-      print("MOOD INDEX: ${data['mood']}");
-      return Mood(
-        time: DateFormat.Hm().format(parsedDate), // Format time as HH:mm
-        emotion: data['emotion'] ?? '',
-        note: data['journal'] ?? '',
-        date: parsedDate,
-        moodIndex: data['mood'] ?? 0,
-      );
-    }).toList();
-  });
-}
+            DateTime parsedDate;
+            try {
+              parsedDate = DateTime.parse(data['date']);
+            } catch (e) {
+              parsedDate = DateTime.now();
+            }
+
+            return Mood(
+              time: DateFormat.Hm().format(parsedDate),
+              emotions: [data['emotion'] ?? ''],
+              note: data['journal'] ?? '',
+              date: parsedDate,
+              moodIndex: data['mood'] ?? 0,
+              photoUrl: data['photoUrl'],
+            );
+          }).toList();
+
+          // Sort di sisi Flutter, bukan Firestore
+          moods.sort((a, b) => b.date.compareTo(a.date));
+          return moods;
+        });
+  }
 
   Future<void> _pickDate(BuildContext context) async {
     final picked = await showDatePicker(
@@ -157,8 +164,21 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
               child: StreamBuilder<List<Mood>>(
                 stream: getMoodStream(),
                 builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        'Belum ada mood yang dicatat',
+                        style: TextStyle(color: Color(0xFF748DAE)),
+                      ),
+                    );
                   }
 
                   final moods = filterData(snapshot.data!);
