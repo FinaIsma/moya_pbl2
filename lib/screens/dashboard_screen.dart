@@ -26,50 +26,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<int, int> _dailyMoods = {}; 
   Map<int, String> _dailyEmotions = {}; 
   String _todayEmotion = "";
+
   StreamSubscription? _moodsSubscription;
+  StreamSubscription? _userSubscription; 
 
   @override
   void initState() {
     super.initState();
-    _fetchUserData();
+    _listenToUserData(); 
     _listenToMonthlyMoods(); 
   }
 
   @override
   void dispose() {
     _moodsSubscription?.cancel(); 
+    _userSubscription?.cancel(); 
     super.dispose();
   }
 
-  Future<void> _fetchUserData() async {
-    try {
-      User? currentUser = FirebaseAuth.instance.currentUser;
+  void _listenToUserData() {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return;
 
-      if (currentUser != null) {
-        DocumentSnapshot userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(currentUser.uid)
-            .get();
+    _userSubscription = FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .snapshots()
+        .listen((userDoc) {
+      if (userDoc.exists && mounted) {
+        setState(() {
+          _username = userDoc.get('name') ?? "User";
 
-        if (userDoc.exists && mounted) {
-          setState(() {
-            _username = userDoc.get('name') ?? "User";
-
-            final data = userDoc.data() as Map<String, dynamic>?;
-            if (data != null && data.containsKey('foto_profile')) {
-              _profileImageUrl = data['foto_profile'] as String?;
-            }
-          });
-        }
+          final data = userDoc.data() as Map<String, dynamic>?;
+          if (data != null) {
+            _profileImageUrl = data['profileImage'] as String?;
+          }
+        });
       }
-    } catch (e) {
-      debugPrint("Error fetching user data: $e");
+    }, onError: (error) {
+      debugPrint("Error fetching user data: $error");
       if (mounted) {
         setState(() {
           _username = "User";
         });
       }
-    }
+    });
   }
 
   void _listenToMonthlyMoods() {
@@ -246,12 +247,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             border: Border.all(color: const Color(0xFF86B4C4), width: 2),
           ),
           child: CircleAvatar(
-            backgroundColor: const Color(0xFFD3D3D3),
+            backgroundColor: const Color(0xFFD3D3D3), 
             backgroundImage: (_profileImageUrl != null && _profileImageUrl!.isNotEmpty)
-                ? NetworkImage(_profileImageUrl!)
+                ? NetworkImage(_profileImageUrl!) 
                 : null,
             child: (_profileImageUrl == null || _profileImageUrl!.isEmpty)
-                ? const Icon(Icons.person, color: Colors.white, size: 30)
+                ? const Icon(Icons.person, color: Colors.white, size: 30) 
                 : null,
           ),
         ),
