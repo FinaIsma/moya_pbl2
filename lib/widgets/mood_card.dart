@@ -115,27 +115,28 @@ class MoodCard extends StatelessWidget {
                   const SizedBox(height: 4),
 
                   
-                  Row(
-                    children: [
+                 Row(
+                  children: [
+                    if (mood.emotions.isNotEmpty) ...[ 
                       Image.asset(
-                        getEmotionImage(mood.emotion),
+                        getEmotionImage(mood.emotions.first),
                         width: 16,
                         height: 16,
                       ),
                       const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          mood.emotion,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.black54,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
                     ],
-                  ),
-
+                    Flexible(
+                      child: Text(
+                        mood.emotions.isNotEmpty ? mood.emotions.join(', ') : '-',  
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black54,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
                   const SizedBox(height: 4),
 
                  

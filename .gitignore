@@ -50,3 +50,18 @@ firebase/
 moya_pbl2/
 android/.gradle/
 ios/Pods/
+
+# Flutter generated
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+
+.firebase/
+
+# IDE
+.idea/
+.vscode/
+
+# Generated plugin registrant
+lib/generated_plugin_registrant.dart

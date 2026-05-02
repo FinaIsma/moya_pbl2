@@ -1,16 +1,18 @@
 class Mood {
   final String time;
-  final String emotion;
+  final List<String> emotions;
   final String note;
   final DateTime date;
   final int moodIndex;
+  final String? photoUrl;
 
   Mood({
     required this.time,
-    required this.emotion,
+    required this.emotions,
     required this.note,
     required this.date,
-    required this.moodIndex,
+    required this.moodIndex, 
+    this.photoUrl,
   });
 
   factory Mood.fromFirestore(Map<String, dynamic> data) {
@@ -29,10 +31,11 @@ class Mood {
     "${parsedDate.hour.toString().padLeft(2, '0')}:${parsedDate.minute.toString().padLeft(2, '0')}";
     return Mood(
       moodIndex: data['mood'] ?? 0,       
-      emotion: data['emotion'] ?? '',
+      emotions: List<String>.from(data['emotion'] ?? []),
       note: data['journal'] ?? '',
       date: parsedDate,
       time: formattedTime,
+      photoUrl: data['photoUrl'],
     );
   }
 }

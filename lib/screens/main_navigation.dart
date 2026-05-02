@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dashboard_screen.dart';
 import 'mood_input_screen.dart';
 import 'profile_screen.dart';
+import 'community_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -16,7 +17,7 @@ class _MainNavigationState extends State<MainNavigation> {
 
   final List<Widget> _pages = [
     const DashboardScreen(),
-    const Center(child: Text('Community Page (Coming Soon)', style: TextStyle(fontSize: 20))),
+    const CommunityScreen(),
     const Center(child: Text('Analytics Page (Coming Soon)', style: TextStyle(fontSize: 20))),
     const ProfileScreen(),
   ];
@@ -85,7 +86,6 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 
   Widget _buildNavItem(String iconPath, String label, int index) {
-
     bool isSelected = _selectedIndex == index;
 
     Color itemColor = isSelected ? const Color(0xFF2D3748) : const Color(0xFF5A6A7E);
