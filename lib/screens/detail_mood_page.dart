@@ -105,9 +105,9 @@ class DetailMoodPage extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        _circle(getMoodImage(mood.moodIndex), size: 48),
+                        _circle(getMoodImage(mood.moodIndex), size: 52),
                         const SizedBox(height: 12),
-                        _circle(getEmotionImage(mood.emotions.first), size: 36),
+                        _circle(getEmotionImage(mood.emotions.first), size: 40),
                       ],
                     ),
                   ),
