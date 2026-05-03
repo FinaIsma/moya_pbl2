@@ -1,12 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'main_navigation.dart';
 import 'mood_journal_page.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
+  const DashboardScreen({super.key});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -24,45 +23,165 @@ class _DashboardScreenState extends State<DashboardScreen> {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
+  Map<int, int> _dailyMoods = {}; 
+  Map<int, String> _dailyEmotions = {}; 
+  String _todayEmotion = "";
+
+  StreamSubscription? _moodsSubscription;
+  StreamSubscription? _userSubscription; 
+
   @override
   void initState() {
     super.initState();
-    _fetchUserData();
+    _listenToUserData(); 
+    _listenToMonthlyMoods(); 
   }
 
-  Future<void> _fetchUserData() async {
-    try {
-      User? currentUser = FirebaseAuth.instance.currentUser;
+  @override
+  void dispose() {
+    _moodsSubscription?.cancel(); 
+    _userSubscription?.cancel(); 
+    super.dispose();
+  }
 
-      if (currentUser != null) {
-        DocumentSnapshot userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(currentUser.uid)
-            .get();
+  void _listenToUserData() {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return;
 
-        if (userDoc.exists && mounted) {
-          setState(() {
-            _username = userDoc.get('name') ?? "User";
+    _userSubscription = FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .snapshots()
+        .listen((userDoc) {
+      if (userDoc.exists && mounted) {
+        setState(() {
+          _username = userDoc.get('name') ?? "User";
 
-            final data = userDoc.data() as Map<String, dynamic>?;
-            if (data != null && data.containsKey('foto_profile')) {
-              _profileImageUrl = data['foto_profile'] as String?;
-            }
-          });
-        }
+          final data = userDoc.data() as Map<String, dynamic>?;
+          if (data != null) {
+            _profileImageUrl = data['profileImage'] as String?;
+          }
+        });
       }
-    } catch (e) {
-      debugPrint("Error fetching user data: $e");
+    }, onError: (error) {
+      debugPrint("Error fetching user data: $error");
       if (mounted) {
         setState(() {
           _username = "User";
         });
       }
-    }
+    });
+  }
+
+  void _listenToMonthlyMoods() {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return;
+
+    _moodsSubscription?.cancel();
+
+    _moodsSubscription = FirebaseFirestore.instance
+        .collection('moods')
+        .where('userId', isEqualTo: currentUser.uid)
+        .snapshots() 
+        .listen((snapshot) {
+      
+      Map<int, Map<String, dynamic>> tempMoods = {};
+      DateTime now = DateTime.now();
+      String tempTodayEmotion = "";
+      Timestamp? latestTodayCreatedAt;
+
+      for (var doc in snapshot.docs) {
+        var data = doc.data();
+        if (data['date'] == null || data['mood'] == null) continue;
+
+        DateTime moodDate = DateTime.parse(data['date']);
+        Timestamp? createdAt = data['createdAt'] as Timestamp?;
+        int moodIndex = data['mood']; 
+        String emotionLabel = data['emotion'] ?? ""; 
+
+        if (moodDate.year == now.year && moodDate.month == now.month && moodDate.day == now.day) {
+          if (latestTodayCreatedAt == null) {
+            tempTodayEmotion = emotionLabel;
+            latestTodayCreatedAt = createdAt;
+          } else if (createdAt != null && createdAt.compareTo(latestTodayCreatedAt) > 0) {
+            tempTodayEmotion = emotionLabel;
+            latestTodayCreatedAt = createdAt;
+          }
+        }
+
+        if (moodDate.month == _selectedMonth && moodDate.year == _selectedYear) {
+          int day = moodDate.day;
+          if (!tempMoods.containsKey(day)) {
+            tempMoods[day] = {'mood': moodIndex, 'emotion': emotionLabel, 'createdAt': createdAt};
+          } else {
+            Timestamp? existingCreatedAt = tempMoods[day]!['createdAt'];
+            if (createdAt != null && existingCreatedAt != null) {
+              if (createdAt.compareTo(existingCreatedAt) > 0) {
+                tempMoods[day] = {'mood': moodIndex, 'emotion': emotionLabel, 'createdAt': createdAt};
+              }
+            } else if (createdAt != null) {
+               tempMoods[day] = {'mood': moodIndex, 'emotion': emotionLabel, 'createdAt': createdAt};
+            }
+          }
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _dailyMoods.clear();
+          _dailyEmotions.clear(); 
+          tempMoods.forEach((key, value) {
+            _dailyMoods[key] = value['mood'];
+            _dailyEmotions[key] = value['emotion']; 
+          });
+          _todayEmotion = tempTodayEmotion; 
+        });
+      }
+    });
   }
 
   int _getDaysInMonth(int year, int month) {
     return DateTime(year, month + 1, 0).day;
+  }
+
+  List<Map<String, dynamic>> _getRecommendationsDetails(String emotion) {
+    switch (emotion) {
+      case "Happy":
+      case "Grateful":
+        return [
+          {"icon": Icons.people_outline, "title": "Share your joy with a friend", "subtitle": "Send a nice message to someone."},
+          {"icon": Icons.edit_note, "title": "Write down 3 things you're thankful for", "subtitle": "Acknowledge the good things."},
+          {"icon": Icons.card_giftcard, "title": "Treat yourself!", "subtitle": "You deserve it today."}
+        ];
+      case "Tired":
+      case "Stressed":
+        return [
+          {"icon": Icons.bedtime_outlined, "title": "Take a 15-minute power nap", "subtitle": "Rest your eyes for a bit."},
+          {"icon": Icons.headphones_outlined, "title": "Listen to lo-fi music", "subtitle": "Calm your mind with soft beats."},
+          {"icon": Icons.air, "title": "Deep breathing for 5 minutes", "subtitle": "Inhale calm, exhale stress."}
+        ];
+      case "Angry":
+      case "Desperate":
+        return [
+          {"icon": Icons.directions_walk, "title": "Go for a quick walk", "subtitle": "Release that built-up energy."},
+          {"icon": Icons.sports_baseball_outlined, "title": "Squeeze a stress ball", "subtitle": "Let out the tension safely."},
+          {"icon": Icons.edit_document, "title": "Write out your frustrations on paper", "subtitle": "Pour your feelings onto the page."}
+        ];
+      case "Sad":
+        return [
+          {"icon": Icons.movie_creation_outlined, "title": "Watch a comfort movie", "subtitle": "Distract yourself with a favorite film."},
+          {"icon": Icons.favorite_border, "title": "Hug a pillow", "subtitle": "Give yourself some physical comfort."},
+          {"icon": Icons.emoji_food_beverage_outlined, "title": "Drink a warm cup of tea", "subtitle": "Soothe your body from the inside."}
+        ];
+      default: 
+        return [
+          {
+            "icon": Icons.edit_calendar_outlined, 
+            "title": "We haven't heard from you!", 
+            "subtitle": "Take a quick pause. Log your first mood today and let's see how we can support you."
+          },
+        ];
+    }
   }
 
   @override
@@ -128,12 +247,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             border: Border.all(color: const Color(0xFF86B4C4), width: 2),
           ),
           child: CircleAvatar(
-            backgroundColor: const Color(0xFFD3D3D3),
+            backgroundColor: const Color(0xFFD3D3D3), 
             backgroundImage: (_profileImageUrl != null && _profileImageUrl!.isNotEmpty)
-                ? NetworkImage(_profileImageUrl!)
+                ? NetworkImage(_profileImageUrl!) 
                 : null,
             child: (_profileImageUrl == null || _profileImageUrl!.isEmpty)
-                ? const Icon(Icons.person, color: Colors.white, size: 30)
+                ? const Icon(Icons.person, color: Colors.white, size: 30) 
                 : null,
           ),
         ),
@@ -157,7 +276,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 textAlign: TextAlign.right,
                 text: TextSpan(
                   style: const TextStyle(
-                    fontSize: 30,
+                    fontSize: 28,
                     color: Color(0xFF2D3748),
                     height: 1.3,
                   ),
@@ -319,82 +438,87 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildCalendar() {
-    final List<String> daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    int daysInMonth = _getDaysInMonth(_selectedYear, _selectedMonth);
-    int firstWeekdayOfMonth = DateTime(_selectedYear, _selectedMonth, 1).weekday;
-    int firstDayOffset = firstWeekdayOfMonth == 7 ? 0 : firstWeekdayOfMonth;
-    int totalCells = firstDayOffset + daysInMonth;
+      final List<String> daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      int daysInMonth = _getDaysInMonth(_selectedYear, _selectedMonth);
+      int firstWeekdayOfMonth = DateTime(_selectedYear, _selectedMonth, 1).weekday;
+      int firstDayOffset = firstWeekdayOfMonth == 7 ? 0 : firstWeekdayOfMonth;
+      int totalCells = firstDayOffset + daysInMonth;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFA5C9D5),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: daysOfWeek.map((day) => Expanded(
-              child: Text(
-                day,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-              ),
-            )).toList(),
-          ),
-          const SizedBox(height: 12),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: totalCells,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 7,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 8,
-              childAspectRatio: 0.7,
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFA5C9D5),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: daysOfWeek.map((day) => Expanded(
+                child: Text(
+                  day,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                ),
+              )).toList(),
             ),
-            itemBuilder: (context, index) {
-              if (index < firstDayOffset) {
-                return const SizedBox();
-              }
+            const SizedBox(height: 12),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: totalCells,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 7,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 8,
+                childAspectRatio: 0.7,
+              ),
+              itemBuilder: (context, index) {
+                if (index < firstDayOffset) {
+                  return const SizedBox();
+                }
 
-              int day = index - firstDayOffset + 1;
-              bool hasMood = false;
+                int day = index - firstDayOffset + 1;
+                
+                bool hasMood = _dailyMoods.containsKey(day);
+                int moodIndex = hasMood ? _dailyMoods[day]! : -1;
 
-              return Column(
-                children: [
-                  Container(
-                    width: 35,
-                    height: 35,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: hasMood
-                        ? Center(
-                      child: Image.asset(
-                        'assets/images/happy.png',
-                        width: 20,
-                        height: 20,
+                return Column(
+                  children: [
+                    Container(
+                      width: 35,
+                      height: 35,
+                      decoration: const BoxDecoration(
+                        color: Colors.white, 
+                        shape: BoxShape.circle,
                       ),
-                    )
-                        : null,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "$day",
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
-                  ),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
+                      child: hasMood
+                          ? Center(
+                              child: Image.asset(
+                                'assets/images/emot${moodIndex + 1}.png', 
+                                width: 26, 
+                                height: 26,
+                                fit: BoxFit.contain,
+                              ),
+                            )
+                          : null,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "$day",
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      );
+    }
 
   Widget _buildThingsToDo() {
+    List<Map<String, dynamic>> recommendations = _getRecommendationsDetails(_todayEmotion);
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -446,25 +570,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               child: Column(
-                children: [
-                  _recommendationCard(
-                      Icons.air,
-                      "Take a Deep Breath",
-                      "Inhale calm for 5 counts, exhale slowly."
-                  ),
-                  const SizedBox(height: 12),
-                  _recommendationCard(
-                      Icons.eco_outlined,
-                      "Look Outside",
-                      "Take 1 minute to look at a plant or tree detail."
-                  ),
-                  const SizedBox(height: 12),
-                  _recommendationCard(
-                      Icons.sentiment_satisfied_alt,
-                      "Share a Smile",
-                      "Say a genuine \"thank you\" or smile at someone."
-                  ),
-                ],
+                children: recommendations.map((rec) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _recommendationCard(
+                      rec["icon"],
+                      rec["title"],
+                      rec["subtitle"],
+                    ),
+                  );
+                }).toList(),
               ),
             ),
         ],
@@ -608,6 +723,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       _selectedMonth = tempMonth;
                       _selectedYear = tempYear;
                     });
+                    _listenToMonthlyMoods(); 
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
@@ -630,7 +746,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 }
-
 
 class PlaceholderPage extends StatelessWidget {
   final String name;
