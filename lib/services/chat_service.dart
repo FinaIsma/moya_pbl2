@@ -11,7 +11,6 @@ class ChatService {
   static final _auth      = FirebaseAuth.instance;
 
   // ─── Cloudinary config ────────────────────────────────────
-  // Ganti dengan nilai asli dari temenmu
   static const String _cloudName    = 'drkxaqn7z';
   static const String _uploadPreset = 'mooya_preset';
 
