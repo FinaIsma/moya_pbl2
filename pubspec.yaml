@@ -16,12 +16,14 @@ dependencies:
   firebase_core: ^3.6.0
   firebase_auth: ^5.3.1
   cloud_firestore: ^5.4.4
-  intl: ^0.18.1
+  intl: ^0.20.2
   image_picker: ^1.0.7
+  file_picker: ^8.0.0
   firebase_storage: ^12.4.10
   cloudflare_r2: ^0.0.14
   http: ^1.6.0
   http_parser: ^4.1.2
+  fl_chart: ^1.2.0
 
 dev_dependencies:
   flutter_test:
@@ -62,4 +64,14 @@ flutter:
     - assets/images/icon_Analytics.png
     - assets/images/icon_Profile.png
     - assets/images/profile.png
-    
+    - assets/images/icon_avg.png
+    - assets/images/icon_streak.png
+    - assets/images/icon_mon.png
+    - assets/images/icon_thu.png
+    - assets/images/icon_wed.png
+    - assets/images/icon_tue.png
+    - assets/images/icon_fri.png
+    - assets/images/icon_sat.png
+    - assets/images/icon_sun.png
+    - assets/images/icon_noday.png
+    - assets/images/emot0.png

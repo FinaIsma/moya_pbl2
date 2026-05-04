@@ -13,6 +13,7 @@ import 'screens/profile_screen.dart';
 import 'screens/community_screen.dart';
 import 'screens/create_post_screen.dart';
 import 'screens/psychologist_dashboard.dart';
+import 'screens/analytics_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,6 +60,7 @@ class MyApp extends StatelessWidget {
         '/community': (context) => const CommunityScreen(),
         '/create-post': (context) => const CreatePostScreen(),
         '/psychologist-dashboard': (context) => const PsychologistDashboard(),
+        '/analytics': (context) => const AnalyticsScreen(),
       },
     );
   }
