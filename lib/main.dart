@@ -48,7 +48,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: Colors.white,
       ),
-      initialRoute: '/psychologists',
+      initialRoute: '/splash',
       routes: {
         '/splash':    (context) => const SplashScreen(),
         '/opening':   (context) => const OpeningScreen(),

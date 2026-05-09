@@ -3,7 +3,7 @@ import '../models/psychologist.dart';
 import 'chat_room_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/chat_service.dart';
-import 'chat_room_screen.dart';
+
 
 class PsychologistDetailPage extends StatelessWidget {
   final Psychologist psychologist;
@@ -46,7 +46,7 @@ class PsychologistDetailPage extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: secondaryBlue,
+                            color: Colors.black,
                           ),
                         ),
                       ],
@@ -63,26 +63,33 @@ class PsychologistDetailPage extends StatelessWidget {
                         border: Border.all(color: accentPink, width: 3),
                       ),
                       child: ClipOval(
-                        child: Image.asset(
-                          'assets/images/doctor_avatar.png',
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(
-                            Icons.person,
-                            size: 50,
-                            color: Colors.white,
-                          ),
+                        child: psychologist.photoUrl != null && psychologist.photoUrl!.isNotEmpty
+                            ? Image.network(
+                                psychologist.photoUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Icon(
+                                    Icons.person,
+                                    color: Colors.white,
+                                    size: 50,
+                                  );
+                                },
+                              )
+                            : const Icon(
+                                Icons.person,
+                                color: Colors.white,
+                                size: 50,
+                              ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-
+                    const SizedBox(height: 16),
                     // Nama
                     Text(
                       psychologist.name,
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: secondaryBlue,
+                        color: Colors.black,
                       ),
                     ),
                     const SizedBox(height: 4),

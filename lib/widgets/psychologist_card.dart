@@ -28,21 +28,25 @@ class PsychologistCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Avatar lebih besar
-            CircleAvatar(
-              radius: 36,
-              backgroundColor: const Color(0xFF9ECAD6),
-              backgroundImage:
-                  (psychologist.photoUrl != null &&
+           
+        CircleAvatar(
+          radius: 36,
+          backgroundColor: const Color(0xFF9ECAD6),
+          backgroundImage:
+              (psychologist.photoUrl != null &&
                       psychologist.photoUrl!.isNotEmpty)
                   ? NetworkImage(psychologist.photoUrl!)
                   : null,
-              child:
-                  (psychologist.photoUrl == null ||
+          child:
+              (psychologist.photoUrl == null ||
                       psychologist.photoUrl!.isEmpty)
-                  ? const Icon(Icons.person, color: Colors.white, size: 34)
+                  ? const Icon(
+                      Icons.person,
+                      color: Colors.white,
+                      size: 34,
+                    )
                   : null,
-            ),
+        ),
             const SizedBox(width: 14),
 
             Expanded(
@@ -103,7 +107,7 @@ class PsychologistCard extends StatelessWidget {
                     child: Text(
                       'Chat',
                       style: GoogleFonts.poppins(
-                        color: const Color(0xFF748DAE),
+                        color: const Color.fromARGB(255, 0, 0, 0),
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
                       ),

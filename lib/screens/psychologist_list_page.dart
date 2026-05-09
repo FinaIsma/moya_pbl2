@@ -300,7 +300,7 @@ class _PsychologistListPageState extends State<PsychologistListPage> {
                     style: GoogleFonts.poppins(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: secondaryBlue,
+                      color: Colors.black,
                     ),
                   ),
                 ],

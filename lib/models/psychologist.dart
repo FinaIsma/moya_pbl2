@@ -29,19 +29,19 @@ class Psychologist {
     required this.education,
   });
 
-  factory Psychologist.fromFirestore(Map<String, dynamic> data, String id) {
+    factory Psychologist.fromFirestore(Map<String, dynamic> data, String id) {
     return Psychologist(
       id: id,
       name: data['name'] ?? '',
       title: data['title'] ?? '',
-      experience: data['experience'] ?? 0,
-      price: data['price'] ?? 0,
-      rating: (data['rating'] ?? 0).toDouble(),
-      totalConsult: data['totalConsult'] ?? 0,
+      experience: int.tryParse(data['experience'].toString()) ?? 0,
+      price: int.tryParse(data['price'].toString()) ?? 0,
+      rating: double.tryParse(data['rating'].toString()) ?? 0.0,
+      totalConsult: int.tryParse(data['totalConsult'].toString()) ?? 0,
       expertise: List<String>.from(data['expertise'] ?? []),
-      photoUrl: data['photoUrl'] as String?,
+      photoUrl: data['photoUrl']?.toString(),
       gender: data['gender'] ?? '',
-      age: data['age'] ?? 0,
+      age: int.tryParse(data['age'].toString()) ?? 0,
       about: data['about'] ?? '',
       education: List<String>.from(data['education'] ?? []),
     );
