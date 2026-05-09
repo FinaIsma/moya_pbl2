@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../screens/splash_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -98,8 +97,7 @@ class _RegisterScreenState extends State<RegisterScreen>
       // Firestore gagal — akun Auth sudah dibuat, tetap lanjut
     }
 
-    // Step 3: Simpan session & navigate
-    await AuthHelper.setLoggedIn(true);
+    // Step 3: Navigate
     if (mounted) {
       setState(() => _isLoading = false);
       Navigator.pushReplacementNamed(context, '/dashboard');

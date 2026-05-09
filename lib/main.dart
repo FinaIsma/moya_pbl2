@@ -12,6 +12,7 @@ import 'screens/main_navigation.dart';
 import 'screens/profile_screen.dart';
 import 'screens/community_screen.dart';
 import 'screens/create_post_screen.dart';
+import 'screens/psychologist_dashboard.dart';
 import 'screens/analytics_screen.dart';
 import 'screens/psychologist_list_page.dart';
 
@@ -59,6 +60,7 @@ class MyApp extends StatelessWidget {
         '/profile':   (context) => const ProfileScreen(),
         '/community': (context) => const CommunityScreen(),
         '/create-post': (context) => const CreatePostScreen(),
+        '/psychologist-dashboard': (context) => const PsychologistDashboard(),
         '/analytics': (context) => const AnalyticsScreen(),
         '/psychologists': (context) => const PsychologistListPage(),
       },

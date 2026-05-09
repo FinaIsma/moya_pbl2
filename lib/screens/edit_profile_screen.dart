@@ -24,7 +24,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _fullNameController = TextEditingController();
   final _nicknameController = TextEditingController();
   final _dobController = TextEditingController();
-  final _genderController = TextEditingController();
+  String? _selectedGender;
+  DateTime? _selectedDate;
 
   XFile? _pickedFile;
   bool _isLoading = false;
@@ -45,7 +46,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _fullNameController.text = doc['fullName'] ?? '';
           _nicknameController.text = doc['nickname'] ?? '';
           _dobController.text = doc['dob'] ?? '';
-          _genderController.text = doc['gender'] ?? '';
+          _selectedGender = doc['gender'];
           _currentImageUrl = doc['profileImage'];
         });
       }
@@ -106,7 +107,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'fullName': _fullNameController.text,
         'nickname': _nicknameController.text,
         'dob': _dobController.text,
-        'gender': _genderController.text,
+        'gender': _selectedGender ?? '',
         'profileImage': imageUrl,
       }, SetOptions(merge: true));
 
@@ -180,8 +181,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     // INPUT FIELDS
                     _buildField("Full Name", _fullNameController),
                     _buildField("Nickname", _nicknameController),
-                    _buildField("Date of Birth", _dobController),
-                    _buildField("Gender", _genderController),
+                    _buildDateField(),
+                    _buildGenderDropdown(),
                   ],
                 ),
               ),
@@ -234,5 +235,100 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ],
       ),
     );
+  }
+  // Date picker field
+  Widget _buildDateField() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 8),
+            child: Text('Date of Birth', style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[600])),
+          ),
+          GestureDetector(
+            onTap: _pickDate,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              decoration: BoxDecoration(
+                color: lightGrey,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _dobController.text.isEmpty ? 'Select date' : _dobController.text,
+                    style: GoogleFonts.poppins(
+                      fontSize: 15,
+                      color: _dobController.text.isEmpty ? Colors.grey : Colors.black,
+                    ),
+                  ),
+                  Icon(Icons.calendar_today_outlined, size: 18, color: darkTeal),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Gender dropdown
+  Widget _buildGenderDropdown() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 8),
+            child: Text('Gender', style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[600])),
+          ),
+          DropdownButtonFormField<String>(
+            value: _selectedGender,
+            hint: Text('Select gender', style: GoogleFonts.poppins(fontSize: 15, color: Colors.grey)),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: lightGrey,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            ),
+            style: GoogleFonts.poppins(fontSize: 15, color: Colors.black),
+            dropdownColor: Colors.white,
+            icon: Icon(Icons.keyboard_arrow_down, color: darkTeal),
+            items: ['Male', 'Female', 'Prefer not to say']
+                .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+                .toList(),
+            onChanged: (val) => setState(() => _selectedGender = val),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Date picker logic
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime(2000),
+      firstDate: DateTime(1950),
+      lastDate: DateTime.now(),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: ColorScheme.light(primary: darkTeal),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+        _dobController.text =
+            '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+      });
+    }
   }
 }

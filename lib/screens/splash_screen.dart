@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // ─── ROUTES ─────────────────────────────────────────────────────
 const String _routeLoggedIn  = '/dashboard'; // sudah login → dashboard
@@ -10,24 +10,6 @@ const String _routeLoggedOut = '/opening';   // belum login → opening page
 const String _icon1Path = 'assets/images/icon1.png';
 const String _iconsCombinedPath = 'assets/images/icons.png';
 
-// ─── Helper: simpan & baca status login ─────────────────────────
-// Panggil AuthHelper.setLoggedIn(true)  saat user berhasil login
-// Panggil AuthHelper.setLoggedIn(false) saat user logout
-class AuthHelper {
-  static const String _key = 'is_logged_in';
-
-  static Future<void> setLoggedIn(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_key, value);
-  }
-
-  static Future<bool> isLoggedIn() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_key) ?? false; // default: belum login
-  }
-}
-
-// ────────────────────────────────────────────────────────────────
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -149,7 +131,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<bool> _checkSession() async {
-    return await AuthHelper.isLoggedIn();
+    return FirebaseAuth.instance.currentUser != null;
   }
 
   @override

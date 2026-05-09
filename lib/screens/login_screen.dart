@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../screens/splash_screen.dart'; // untuk AuthHelper
+import 'package:cloud_firestore/cloud_firestore.dart'; // untuk ambil role user
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -50,33 +50,69 @@ class _LoginScreenState extends State<LoginScreen>
 
   // ─── Sign In ────────────────────────────────────────────────
   Future<void> _signIn() async {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isLoading    = true;
-      _errorMessage = null;
-    });
+  setState(() {
+    _isLoading = true;
+    _errorMessage = null;
+  });
 
-    try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email:    _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+  try {
+    // 1. Proses Login ke Firebase Auth
+    UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+    );
 
-      // Simpan status login
-      await AuthHelper.setLoggedIn(true);
+    User? user = userCredential.user;
 
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/dashboard');
+    if (user != null) {
+      // 2. Ambil data role dari Firestore
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (!mounted) return; // Cek mounted setelah await
+
+      if (userDoc.exists) {
+        // Ambil data role
+        Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
+        String role = data['role'] ?? 'user';
+
+        if (mounted) {
+          // Logika Navigasi berdasarkan Role
+          if (role == 'psychologist') {
+            Navigator.pushReplacementNamed(context, '/psychologist-dashboard');
+          } else {
+            Navigator.pushReplacementNamed(context, '/dashboard');
+          }
+        }
+      } else {
+        setState(() => _errorMessage = 'Data user tidak ditemukan di database.');
+        await FirebaseAuth.instance.signOut();
       }
-    } on FirebaseAuthException catch (e) {
+    }
+  } on FirebaseAuthException catch (e) {
+    if (mounted) {
       setState(() {
         _errorMessage = _getFriendlyError(e.code);
+        _isLoading = false;
       });
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    }
+  } catch (e) {
+    if (mounted) {
+      setState(() {
+        _errorMessage = 'Terjadi kesalahan sistem.';
+        _isLoading = false;
+      });
+    }
+  } finally {
+    if (mounted) {
+      setState(() => _isLoading = false);
     }
   }
+}
 
   // ─── Forgot Password ────────────────────────────────────────
   Future<void> _forgotPassword() async {

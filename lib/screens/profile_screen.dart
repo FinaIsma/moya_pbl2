@@ -78,9 +78,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: CircleAvatar(
                         radius: 55,
                         // Ambil foto dari URL atau asset default
-                        backgroundImage: (userData?['profileImage'] != null)
+                        backgroundImage: (userData?['profileImage'] != null && userData!['profileImage'].toString().isNotEmpty)
                           ? NetworkImage("${userData!['profileImage']}?v=${DateTime.now().millisecondsSinceEpoch}")
-                          : const AssetImage('assets/images/profile.png') as ImageProvider,
+                          : null,
+                        child: (userData?['profileImage'] == null || userData!['profileImage'].toString().isEmpty)
+                          ? const Icon(Icons.person, size: 45, color: Colors.white)
+                          : null,
                       ),
                     ),
                     Positioned(
@@ -110,10 +113,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               // Profile Section - DATA DIAMBIL DARI userData
               _buildSectionTitle('Profile'),
-              _buildReadOnlyField('Full Name', userData?['fullName'] ?? 'Shinta Bella'),
-              _buildReadOnlyField('Nickname', userData?['nickname'] ?? 'Shinta'),
-              _buildReadOnlyField('Date of Birth', userData?['dob'] ?? '01/01/2000'),
-              _buildReadOnlyField('Gender', userData?['gender'] ?? 'Female'),
+              _buildReadOnlyField('Full Name', userData?['fullName'] ?? '-'),
+              _buildReadOnlyField('Nickname', userData?['nickname'] ?? '-'),
+              _buildReadOnlyField('Date of Birth', userData?['dob'] ?? '-'),
+              _buildReadOnlyField('Gender', userData?['gender'] ?? '-'),
 
               const SizedBox(height: 16),
               _buildSectionTitle('Contact'),
