@@ -13,6 +13,7 @@ import 'screens/profile_screen.dart';
 import 'screens/community_screen.dart';
 import 'screens/create_post_screen.dart';
 import 'screens/analytics_screen.dart';
+import 'screens/psychologist_list_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,7 +47,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: Colors.white,
       ),
-      initialRoute: '/splash',
+      initialRoute: '/psychologists',
       routes: {
         '/splash':    (context) => const SplashScreen(),
         '/opening':   (context) => const OpeningScreen(),
@@ -59,6 +60,7 @@ class MyApp extends StatelessWidget {
         '/community': (context) => const CommunityScreen(),
         '/create-post': (context) => const CreatePostScreen(),
         '/analytics': (context) => const AnalyticsScreen(),
+        '/psychologists': (context) => const PsychologistListPage(),
       },
     );
   }
