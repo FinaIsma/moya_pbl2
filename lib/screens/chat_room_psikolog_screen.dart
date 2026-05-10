@@ -44,6 +44,11 @@ class _ChatRoomPsikologScreenState extends State<ChatRoomPsikologScreen> {
   void initState() {
     super.initState();
     ChatService.markAsRead(widget.roomId);
+
+    FirebaseFirestore.instance
+      .collection('chat_rooms')
+      .doc(widget.roomId)
+      .update({'unread_count': 0});
   }
 
   @override

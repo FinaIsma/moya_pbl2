@@ -78,6 +78,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     if (text.isEmpty) return;
     _textController.clear();
     await ChatService.sendText(roomId: widget.roomId, text: text);
+
+    await FirebaseFirestore.instance
+        .collection('chat_rooms')
+        .doc(widget.roomId)
+        .update({
+      'last_message': text,
+      'last_message_at': FieldValue.serverTimestamp(),
+      'unread_count': FieldValue.increment(1), 
+    });
+    
     _scrollToBottom();
   }
 
