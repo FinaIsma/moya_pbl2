@@ -1,7 +1,9 @@
+import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'chat_room_psikolog_screen.dart';
 
 class PsychologistDashboard extends StatefulWidget {
   const PsychologistDashboard({super.key});
@@ -11,7 +13,7 @@ class PsychologistDashboard extends StatefulWidget {
 }
 
 class _PsychologistDashboardState extends State<PsychologistDashboard> {
-  String _userName = "Loading..."; // Nama default saat menunggu data
+  String _userName = "Loading..."; 
   String? _profileUrl; 
 
   @override
@@ -20,11 +22,9 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
     _getUserData();
   }
 
-  // Fungsi untuk mengambil nama dari Firestore
   Future<void> _getUserData() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      // Ambil dokumen dari koleksi 'users' berdasarkan UID
       final doc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
@@ -32,20 +32,13 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
 
       if (doc.exists && doc.data() != null) {
         setState(() {
-          
           _userName = doc.data()!['name'] ?? "No Name"; 
-
-          String? imageUrl = doc.data()!['profileImage']; 
-      
-          if (imageUrl != null) {
-            _profileUrl = imageUrl;
-          }
+          _profileUrl = doc.data()!['profileImage']; 
         });
       }
     }
   }
 
-  // --- Fungsi Sign Out Dialog ---
   void _showSignOutDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -56,18 +49,9 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(height: 20),
-              Text(
-                'Sign out',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              Text('Sign out', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
-              Text(
-                'Are you sure you want to sign out?',
-                style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey),
-              ),
+              Text('Are you sure you want to sign out?', style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey)),
               const SizedBox(height: 24),
               const Divider(height: 1),
               Row(
@@ -75,32 +59,18 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
                   Expanded(
                     child: TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        'Cancel',
-                        style: GoogleFonts.poppins(
-                          color: const Color(0xFF748DAE),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      child: Text('Cancel', style: GoogleFonts.poppins(color: const Color(0xFF748DAE), fontWeight: FontWeight.w600)),
                     ),
                   ),
-                  const VerticalDivider(width: 1),
                   Expanded(
                     child: TextButton(
                       onPressed: () async {
                         await FirebaseAuth.instance.signOut();
                         if (context.mounted) {
-                          Navigator.pushNamedAndRemoveUntil(
-                              context, '/login', (route) => false);
+                          Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
                         }
                       },
-                      child: Text(
-                        'Sign out',
-                        style: GoogleFonts.poppins(
-                          color: const Color(0xFFE07B7B),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      child: Text('Sign out', style: GoogleFonts.poppins(color: const Color(0xFFE07B7B), fontWeight: FontWeight.w600)),
                     ),
                   ),
                 ],
@@ -123,60 +93,33 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              // --- Header Area ---
+              // Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Welcome back,',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: const Color(0xFF9ECAD6),
-                        ),
-                      ),
-                      Text(
-                        _userName, 
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1A1A2E),
-                        ),
-                      ),
+                      Text('Welcome back,', style: GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF9ECAD6))),
+                      Text(_userName, style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E))),
                     ],
                   ),
-
                   Stack(
                     children: [
                       CircleAvatar(
                         radius: 25,
                         backgroundColor: const Color(0xFFF5CBCB),
-                        backgroundImage: _profileUrl != null 
-                            ? NetworkImage(_profileUrl!) 
-                            : null,
-                        child: _profileUrl == null 
-                            ? const Icon(Icons.person, color: Color(0xFF1A4A54)) 
-                            : null,
+                        backgroundImage: _profileUrl != null ? NetworkImage(_profileUrl!) : null,
+                        child: _profileUrl == null ? const Icon(Icons.person, color: Color(0xFF1A4A54)) : null,
                       ),
                       Positioned(
-                        bottom: 0,
-                        right: 0,
+                        bottom: 0, right: 0,
                         child: GestureDetector(
                           onTap: () => _showSignOutDialog(context),
                           child: Container(
                             padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2D3E50),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: const Icon(
-                              Icons.logout,
-                              size: 10,
-                              color: Colors.white,
-                            ),
+                            decoration: BoxDecoration(color: const Color(0xFF2D3E50), shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)),
+                            child: const Icon(Icons.logout, size: 10, color: Colors.white),
                           ),
                         ),
                       ),
@@ -185,46 +128,72 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
                 ],
               ),
               const SizedBox(height: 32),
-                Text(
-                  'Consultations',
-                  style: GoogleFonts.poppins(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1A4A54),
-                  ),
+              Text('Consultations', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w700, color: const Color(0xFF1A4A54))),
+              const SizedBox(height: 16),
+              // Search Bar
+              TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search',
+                  hintStyle: GoogleFonts.poppins(color: Colors.grey[400]),
+                  suffixIcon: const Icon(Icons.search, color: Colors.grey),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide(color: Colors.grey.shade300)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide(color: Colors.grey.shade300)),
                 ),
-                const SizedBox(height: 16),
-                // --- Search Bar ---
-                TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Search',
-                    hintStyle: GoogleFonts.poppins(color: Colors.grey[400]),
-                    suffixIcon: const Icon(Icons.search, color: Colors.grey), 
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20), 
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide(color: Colors.grey.shade300), 
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder( 
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: const BorderSide(color: Color(0xFF9ECAD6)),
-                    ),
-                  ),
-                ),
+              ),
               const SizedBox(height: 24),
-              // --- List Consultations ---
               Expanded(
-                child: ListView.builder(
-                  itemCount: 8, // Dummy data
-                  itemBuilder: (context, index) {
-                    bool isActive = index < 3;
-                    return _buildConsultationCard(isActive);
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('chat_rooms')
+                      .where('psikolog_uid', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                      .orderBy('last_message_at', descending: true)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
+                    if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+                    
+                    final docs = snapshot.data?.docs ?? [];
+                    if (docs.isEmpty) return Center(child: Text('No consultations found', style: GoogleFonts.poppins(color: Colors.grey)));
+
+                    return ListView.builder(
+                      itemCount: docs.length,
+                      itemBuilder: (context, index) {
+                        var chatData = docs[index].data() as Map<String, dynamic>;
+                        int unread = chatData['unread_count'] ?? 0;
+                        return GestureDetector(
+                          onTap: () {
+                            FirebaseFirestore.instance
+                            .collection('chat_rooms')
+                            .doc(docs[index].id)
+                            .update({'unread_count': 0});
+                            
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ChatRoomPsikologScreen( 
+                                  roomId: docs[index].id,
+                                  userUid: chatData['user_uid'] ?? '',
+                                  userName: chatData['user_name'] ?? 'User',
+                                  userPhotoUrl: chatData['user_photo_url'] ?? 'https://via.placeholder.com/150',
+                                ),
+                              ),
+                            );
+                          },
+                          child: _buildConsultationCard(
+                            true, 
+                            chatData['user_name'] ?? 'User',
+                            chatData['last_message'] ?? 'No message yet',
+                            chatData['last_message_at'] != null 
+                                ? DateFormat('HH:mm').format((chatData['last_message_at'] as Timestamp).toDate()) 
+                                : 'Just now',
+                            unread,
+                          ),
+                        );
+                      },
+                    );
                   },
                 ),
               ),
@@ -235,7 +204,7 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
     );
   }
 
-  Widget _buildConsultationCard(bool isActive) {
+  Widget _buildConsultationCard(bool isActive, String userName, String lastMsg, dynamic time, int unreadCount) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -255,11 +224,14 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Username',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1A4A54),
-                  ),
+                  userName,
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: const Color(0xFF1A4A54)),
+                ),
+                Text(
+                  lastMsg,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 4),
                 Container(
@@ -270,11 +242,7 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
                   ),
                   child: Text(
                     isActive ? 'Active' : 'Ended',
-                    style: GoogleFonts.poppins(
-                      fontSize: 10,
-                      color: isActive ? const Color(0xFF1A4A54) : const Color(0xFFE07B7B),
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: GoogleFonts.poppins(fontSize: 10, color: isActive ? const Color(0xFF1A4A54) : const Color(0xFFE07B7B), fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -285,15 +253,17 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '13.00',
+                  time, 
                   style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey),
                 ),
                 const SizedBox(height: 4),
-                const CircleAvatar(
-                  radius: 10,
-                  backgroundColor: Color(0xFF9ECAD6),
-                  child: Text('3', style: TextStyle(fontSize: 10, color: Colors.white)),
-                ),
+                
+                if (unreadCount > 0)
+                  const CircleAvatar(
+                    radius: 10,
+                    backgroundColor: Color(0xFF9ECAD6),
+                    child: Text('!', style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
               ],
             ),
         ],
