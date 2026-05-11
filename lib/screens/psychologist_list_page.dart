@@ -29,11 +29,7 @@ class _PsychologistListPageState extends State<PsychologistListPage> {
     "Behavior",
   ];
 
-  final List<Map<String, dynamic>> priceRanges = [
-    {'label': '< Rp50.000', 'min': 0, 'max': 50000},
-    {'label': 'Rp50.000 - Rp100.000', 'min': 50000, 'max': 100000},
-    {'label': '> Rp100.000', 'min': 100000, 'max': 999999999},
-  ];
+  
 
   Stream<List<Psychologist>> getPsychologistStream() {
     return FirebaseFirestore.instance
@@ -54,12 +50,6 @@ class _PsychologistListPageState extends State<PsychologistListPage> {
     if (selectedExperience != null && selectedExperience!.isNotEmpty) {
       final exp = int.tryParse(selectedExperience!) ?? 0;
       list = list.where((p) => p.experience >= exp).toList();
-    }
-    if (selectedPriceRange != null) {
-      list = list.where((p) =>
-        p.price >= selectedPriceRange!['min'] &&
-        p.price <= selectedPriceRange!['max']
-      ).toList();
     }
     return list;
   }
@@ -219,57 +209,7 @@ class _PsychologistListPageState extends State<PsychologistListPage> {
     );
   }
 
-  void _showPriceFilter() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Filter by Price',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: secondaryBlue,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ListTile(
-              title: Text('All', style: GoogleFonts.poppins()),
-              leading: Radio<Map<String, dynamic>?>(
-                value: null,
-                groupValue: selectedPriceRange,
-                activeColor: secondaryBlue,
-                onChanged: (val) {
-                  setState(() => selectedPriceRange = val);
-                  Navigator.pop(context);
-                },
-              ),
-            ),
-            ...priceRanges.map((r) => ListTile(
-                  title: Text(r['label'], style: GoogleFonts.poppins()),
-                  leading: Radio<Map<String, dynamic>?>(
-                    value: r,
-                    groupValue: selectedPriceRange,
-                    activeColor: secondaryBlue,
-                    onChanged: (val) {
-                      setState(() => selectedPriceRange = val);
-                      Navigator.pop(context);
-                    },
-                  ),
-                )),
-          ],
-        ),
-      ),
-    );
-  }
-
+ 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -329,12 +269,6 @@ class _PsychologistListPageState extends State<PsychologistListPage> {
                     'Gender',
                     selected: selectedGender != null,
                     onTap: _showGenderFilter,
-                  ),
-                  const SizedBox(width: 8),
-                  _filterChip(
-                    'Price',
-                    selected: selectedPriceRange != null,
-                    onTap: _showPriceFilter,
                   ),
                 ],
               ),
@@ -408,25 +342,41 @@ class _PsychologistListPageState extends State<PsychologistListPage> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: selected ? secondaryBlue : primaryBlue,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: secondaryBlue.withOpacity(0.2),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 3,
+                    offset: const Offset(0, 1.5),
+                  ),
+                ],
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               label,
               style: GoogleFonts.poppins(
-                fontSize: 12,
+                fontSize: 13,
                 color: selected ? Colors.white : Colors.black87,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 6),
             Icon(
               Icons.keyboard_arrow_down,
-              size: 14,
+              size: 15,
               color: selected ? Colors.white : Colors.black87,
             ),
           ],

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'mood_journal_page.dart';
+import 'psychologist_list_page.dart';
+
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -340,7 +342,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _actionButton('assets/images/icon_consult.png', "Consult", () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const PlaceholderPage(name: "Consult")),
+              MaterialPageRoute(builder: (context) => const PsychologistListPage()),
             );
           }),
 
