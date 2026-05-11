@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'mood_journal_page.dart';
 import 'share_report_screen.dart';
+import 'chat_room_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -346,11 +348,71 @@ class _DashboardScreenState extends State<DashboardScreen> {
           }),
 
           _actionButton('assets/images/icon_chat.png', "Chats", () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const PlaceholderPage(name: "Chats")),
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                title: Text(
+                  "Pilih Psikolog",
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF1A1A2E),
+                  ),
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    
+                    ListTile(
+                      leading: const CircleAvatar(
+                          backgroundColor: Color(0xFF9ECAD6),
+                          child: Icon(Icons.person, color: Colors.white)),
+                      title: Text("Andi Saputra", style: GoogleFonts.poppins(fontSize: 14)),
+                      subtitle: Text("Psikolog Klinis", style: GoogleFonts.poppins(fontSize: 12)),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatRoomScreen(
+                              roomId: "ww5JJ340dbvTZDLBry4b",
+                              psikologUid: "uid_andi_saputra",
+                              psikologName: "Andi Saputra",
+                              psikologPhotoUrl: "",
+                            ),
+                          ),
+                        ); 
+                      }, 
+                    ),
+                    const Divider(),
+                    
+                    ListTile(
+                      leading: const CircleAvatar(
+                          backgroundColor: Color(0xFFF5CBCB),
+                          child: Icon(Icons.person, color: Colors.white)),
+                      title: Text("Saskia Putri", style: GoogleFonts.poppins(fontSize: 14)),
+                      subtitle: Text("Psikolog Konseling", style: GoogleFonts.poppins(fontSize: 12)),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatRoomScreen(
+                              roomId: "fOCiBcqC30NDbXLxAvtC", 
+                              psikologUid: "uid_saskia_putri",
+                              psikologName: "Saskia Putri",
+                              psikologPhotoUrl: "",
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
             );
-          }),
+          }), 
 
           _actionButton('assets/images/icon_report.png', "Share Report", () {
             Navigator.push(

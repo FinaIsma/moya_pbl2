@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../screens/splash_screen.dart'; // untuk AuthHelper
 import 'package:cloud_firestore/cloud_firestore.dart'; // untuk ambil role user
 
 class LoginScreen extends StatefulWidget {
@@ -81,11 +80,8 @@ class _LoginScreenState extends State<LoginScreen>
         Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
         String role = data['role'] ?? 'user';
 
-        // Simpan status login (menggunakan AuthHelper dari splash_screen.dart)
-        await AuthHelper.setLoggedIn(true);
-
         if (mounted) {
-          // 3. Logika Navigasi berdasarkan Role
+          // Logika Navigasi berdasarkan Role
           if (role == 'psychologist') {
             Navigator.pushReplacementNamed(context, '/psychologist-dashboard');
           } else {
