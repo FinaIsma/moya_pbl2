@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'mood_journal_page.dart';
+import 'share_report_screen.dart';
 import 'chat_room_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -416,7 +417,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _actionButton('assets/images/icon_report.png', "Share Report", () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const PlaceholderPage(name: "Share Report")),
+              MaterialPageRoute(builder: (context) => const ShareReportPage()),
             );
           }),
         ],
