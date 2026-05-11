@@ -80,8 +80,6 @@ class PsychologistCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 2),
                         _badge(null, psychologist.gender),
-                        const SizedBox(width: 2),
-                        _badge(null, 'Rp${_formatPrice(psychologist.price)}'),
                       ],
                     ),
                   ),
@@ -145,10 +143,5 @@ class PsychologistCard extends StatelessWidget {
     );
   }
 
-  String _formatPrice(int price) {
-    return price.toString().replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (m) => '${m[1]}.',
-    );
-  }
+ 
 }

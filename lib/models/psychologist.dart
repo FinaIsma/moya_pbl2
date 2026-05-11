@@ -3,7 +3,6 @@ class Psychologist {
   final String name;
   final String title;
   final int experience;
-  final int price;
   final double rating;
   final int totalConsult;
   final List<String> expertise;
@@ -18,7 +17,6 @@ class Psychologist {
     required this.name,
     required this.title,
     required this.experience,
-    required this.price,
     required this.rating,
     required this.totalConsult,
     required this.expertise,
@@ -35,7 +33,6 @@ class Psychologist {
       name: data['name'] ?? '',
       title: data['title'] ?? '',
       experience: int.tryParse(data['experience'].toString()) ?? 0,
-      price: int.tryParse(data['price'].toString()) ?? 0,
       rating: double.tryParse(data['rating'].toString()) ?? 0.0,
       totalConsult: int.tryParse(data['totalConsult'].toString()) ?? 0,
       expertise: List<String>.from(data['expertise'] ?? []),
