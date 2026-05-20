@@ -113,8 +113,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               // Profile Section - DATA DIAMBIL DARI userData
               _buildSectionTitle('Profile'),
-              _buildReadOnlyField('Full Name', userData?['fullName'] ?? '-'),
-              _buildReadOnlyField('Nickname', userData?['nickname'] ?? '-'),
+              _buildReadOnlyField('Full Name', userData?['fullName'] ?? userData?['name'] ?? '-'),
+              _buildReadOnlyField('Name', userData?['name'] ?? userData?['name'] ?? '-'),
               _buildReadOnlyField('Date of Birth', userData?['dob'] ?? '-'),
               _buildReadOnlyField('Gender', userData?['gender'] ?? '-'),
 

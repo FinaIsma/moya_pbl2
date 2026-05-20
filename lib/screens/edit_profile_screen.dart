@@ -43,8 +43,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
       if (doc.exists) {
         setState(() {
-          _fullNameController.text = doc['fullName'] ?? '';
-          _nicknameController.text = doc['nickname'] ?? '';
+          _fullNameController.text = doc['fullName'] ?? doc['name'] ?? '';
+          _nicknameController.text = doc['name'] ?? doc['name'] ?? '';
           _dobController.text = doc['dob'] ?? '';
           _selectedGender = doc['gender'];
           _currentImageUrl = doc['profileImage'];
@@ -105,7 +105,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
         'fullName': _fullNameController.text,
-        'nickname': _nicknameController.text,
+        'name': _nicknameController.text,
         'dob': _dobController.text,
         'gender': _selectedGender ?? '',
         'profileImage': imageUrl,
@@ -180,7 +180,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const SizedBox(height: 40),
                     // INPUT FIELDS
                     _buildField("Full Name", _fullNameController),
-                    _buildField("Nickname", _nicknameController),
+                    _buildField("Name", _nicknameController),
                     _buildDateField(),
                     _buildGenderDropdown(),
                   ],

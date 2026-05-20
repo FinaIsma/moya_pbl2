@@ -15,28 +15,95 @@ class PsychologistDashboard extends StatefulWidget {
 class _PsychologistDashboardState extends State<PsychologistDashboard> {
   String _userName = "Loading..."; 
   String? _profileUrl; 
+  final String _currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+  List<Map<String, dynamic>> _allChats = [];
+  bool _isLoadingChats = true;
 
   @override
   void initState() {
     super.initState();
     _getUserData();
+    _fetchChatRooms(); 
   }
 
   Future<void> _getUserData() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
+    if (_currentUid.isNotEmpty) {
       final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
+          .collection('psychologists') 
+          .doc(_currentUid)
           .get();
 
       if (doc.exists && doc.data() != null) {
         setState(() {
-          _userName = doc.data()!['name'] ?? "No Name"; 
-          _profileUrl = doc.data()!['profileImage']; 
+          _userName = doc.data()!['name'] ?? "No Name";
+          
+          String? rawUrl = doc.data()!['photoUrl']?.toString();
+          if (rawUrl != null && rawUrl.trim().isNotEmpty) {
+            _profileUrl = rawUrl.trim(); 
+          } else {
+            _profileUrl = null;
+          }
         });
       }
     }
+  }
+
+  void _fetchChatRooms() {
+    FirebaseFirestore.instance
+        .collection('chat_rooms')
+        .where('psikolog_uid', isEqualTo: _currentUid)
+        .snapshots()
+        .listen((snapshot) async {
+
+      List<Map<String, dynamic>> tempChats = [];
+
+      for (var doc in snapshot.docs) {
+        var data = doc.data();
+        String userUid = data['user_uid'] ?? '';
+
+        String patientName = "User";
+        String patientPhoto = "";
+
+        if (userUid.isNotEmpty) {
+          try {
+            var userDoc = await FirebaseFirestore.instance.collection('users').doc(userUid).get();
+            if (userDoc.exists) {
+              patientName = userDoc.data()?['name'] ?? userDoc.data()?['fullName'] ?? "User";
+              patientPhoto = userDoc.data()?['profileImage'] ?? userDoc.data()?['foto_profile'] ?? "";
+            }
+          } catch (e) {
+            debugPrint("Gagal mengambil data user: $e");
+          }
+        }
+
+        tempChats.add({
+          'roomId': doc.id,
+          'user_uid': userUid,
+          'user_name': patientName,
+          'user_photo_url': patientPhoto,
+          'last_message': data['last_message'] ?? 'No message yet',
+          'last_message_at': data['last_message_at'],
+          'status': data['status'] ?? 'Active',
+        });
+      }
+
+      tempChats.sort((a, b) {
+        Timestamp? timeA = a['last_message_at'];
+        Timestamp? timeB = b['last_message_at'];
+        if (timeA == null && timeB == null) return 0;
+        if (timeA == null) return 1;
+        if (timeB == null) return -1;
+        return timeB.compareTo(timeA);
+      });
+
+      if (mounted) {
+        setState(() {
+          _allChats = tempChats;
+          _isLoadingChats = false;
+        });
+      }
+    });
   }
 
   void _showSignOutDialog(BuildContext context) {
@@ -106,11 +173,24 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
                   ),
                   Stack(
                     children: [
-                      CircleAvatar(
-                        radius: 25,
-                        backgroundColor: const Color(0xFFF5CBCB),
-                        backgroundImage: _profileUrl != null ? NetworkImage(_profileUrl!) : null,
-                        child: _profileUrl == null ? const Icon(Icons.person, color: Color(0xFF1A4A54)) : null,
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFF5CBCB),
+                          shape: BoxShape.circle,
+                        ),
+                        child: ClipOval(
+                          child: _profileUrl != null && _profileUrl!.isNotEmpty
+                              ? Image.network(
+                                  _profileUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Icon(Icons.person, color: Color(0xFF1A4A54));
+                                  },
+                                )
+                              : const Icon(Icons.person, color: Color(0xFF1A4A54)),
+                        ),
                       ),
                       Positioned(
                         bottom: 0, right: 0,
@@ -144,55 +224,42 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
                 ),
               ),
               const SizedBox(height: 24),
+              // Menampilkan List Chat
               Expanded(
-                child: StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('chat_rooms')
-                      .where('psikolog_uid', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
-                      .orderBy('last_message_at', descending: true)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
-                    if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-                    
-                    final docs = snapshot.data?.docs ?? [];
-                    if (docs.isEmpty) return Center(child: Text('No consultations found', style: GoogleFonts.poppins(color: Colors.grey)));
+                child: _isLoadingChats
+                    ? const Center(child: CircularProgressIndicator())
+                    : _allChats.isEmpty
+                    ? Center(child: Text('No consultations found', style: GoogleFonts.poppins(color: Colors.grey)))
+                    : ListView.builder(
+                  itemCount: _allChats.length,
+                  itemBuilder: (context, index) {
+                    var chatData = _allChats[index];
+                    bool isActive = chatData['status'].toString().toLowerCase() == 'active';
+                    String timeFormatted = chatData['last_message_at'] != null
+                        ? DateFormat('HH:mm').format((chatData['last_message_at'] as Timestamp).toDate())
+                        : 'Just now';
 
-                    return ListView.builder(
-                      itemCount: docs.length,
-                      itemBuilder: (context, index) {
-                        var chatData = docs[index].data() as Map<String, dynamic>;
-                        int unread = chatData['unread_count'] ?? 0;
-                        return GestureDetector(
-                          onTap: () {
-                            FirebaseFirestore.instance
-                            .collection('chat_rooms')
-                            .doc(docs[index].id)
-                            .update({'unread_count': 0});
-                            
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ChatRoomPsikologScreen( 
-                                  roomId: docs[index].id,
-                                  userUid: chatData['user_uid'] ?? '',
-                                  userName: chatData['user_name'] ?? 'User',
-                                  userPhotoUrl: chatData['user_photo_url'] ?? 'https://via.placeholder.com/150',
-                                ),
-                              ),
-                            );
-                          },
-                          child: _buildConsultationCard(
-                            true, 
-                            chatData['user_name'] ?? 'User',
-                            chatData['last_message'] ?? 'No message yet',
-                            chatData['last_message_at'] != null 
-                                ? DateFormat('HH:mm').format((chatData['last_message_at'] as Timestamp).toDate()) 
-                                : 'Just now',
-                            unread,
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatRoomPsikologScreen(
+                              roomId: chatData['roomId'],
+                              userUid: chatData['user_uid'],
+                              userName: chatData['user_name'],
+                              userPhotoUrl: chatData['user_photo_url'],
+                            ),
                           ),
                         );
                       },
+                      child: _buildConsultationCard(
+                        isActive,
+                        chatData['user_name'],
+                        chatData['last_message'],
+                        timeFormatted,
+                        chatData['user_photo_url'], 
+                      ),
                     );
                   },
                 ),
@@ -204,7 +271,7 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
     );
   }
 
-  Widget _buildConsultationCard(bool isActive, String userName, String lastMsg, dynamic time, int unreadCount) {
+  Widget _buildConsultationCard(bool isActive, String userName, String lastMsg, String time, String userPhotoUrl) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -214,9 +281,11 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
       ),
       child: Row(
         children: [
-          const CircleAvatar(
+          CircleAvatar(
             radius: 24,
-            backgroundImage: NetworkImage('https://via.placeholder.com/150'),
+            backgroundColor: const Color(0xFFEBEBEB),
+            backgroundImage: userPhotoUrl.isNotEmpty ? NetworkImage(userPhotoUrl) : null,
+            child: userPhotoUrl.isEmpty ? const Icon(Icons.person, color: Colors.grey) : null,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -226,6 +295,8 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
                 Text(
                   userName,
                   style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: const Color(0xFF1A4A54)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   lastMsg,
@@ -237,35 +308,27 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                   decoration: BoxDecoration(
-                    color: isActive ? const Color(0xFF9ECAD6) : const Color(0xFFF5CBCB),
+                    color: isActive ? const Color(0xFF82C89A) : const Color(0xFFF5CBCB),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     isActive ? 'Active' : 'Ended',
-                    style: GoogleFonts.poppins(fontSize: 10, color: isActive ? const Color(0xFF1A4A54) : const Color(0xFFE07B7B), fontWeight: FontWeight.w600),
+                    style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black87),
                   ),
                 ),
               ],
             ),
           ),
-          if (isActive)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  time, 
-                  style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey),
-                ),
-                const SizedBox(height: 4),
-                
-                if (unreadCount > 0)
-                  const CircleAvatar(
-                    radius: 10,
-                    backgroundColor: Color(0xFF9ECAD6),
-                    child: Text('!', style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
-              ],
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                time,
+                style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey),
+              ),
+              const SizedBox(height: 4),
+            ],
+          ),
         ],
       ),
     );
