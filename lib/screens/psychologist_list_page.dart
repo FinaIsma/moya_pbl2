@@ -29,20 +29,22 @@ class _PsychologistListPageState extends State<PsychologistListPage> {
     "Behavior",
   ];
 
-  
-
   Stream<List<Psychologist>> getPsychologistStream() {
     return FirebaseFirestore.instance
         .collection('psychologists')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Psychologist.fromFirestore(doc.data(), doc.id))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => Psychologist.fromFirestore(doc.data(), doc.id))
+              .toList(),
+        );
   }
 
   List<Psychologist> filterList(List<Psychologist> list) {
     if (selectedExpertise != null && selectedExpertise!.isNotEmpty) {
-      list = list.where((p) => p.expertise.contains(selectedExpertise)).toList();
+      list = list
+          .where((p) => p.expertise.contains(selectedExpertise))
+          .toList();
     }
     if (selectedGender != null && selectedGender!.isNotEmpty) {
       list = list.where((p) => p.gender == selectedGender).toList();
@@ -88,18 +90,20 @@ class _PsychologistListPageState extends State<PsychologistListPage> {
                   },
                 ),
               ),
-              ...expertiseList.map((e) => ListTile(
-                    title: Text(e, style: GoogleFonts.poppins()),
-                    leading: Radio<String?>(
-                      value: e,
-                      groupValue: selectedExpertise,
-                      activeColor: secondaryBlue,
-                      onChanged: (val) {
-                        setState(() => selectedExpertise = val);
-                        Navigator.pop(context);
-                      },
-                    ),
-                  )),
+              ...expertiseList.map(
+                (e) => ListTile(
+                  title: Text(e, style: GoogleFonts.poppins()),
+                  leading: Radio<String?>(
+                    value: e,
+                    groupValue: selectedExpertise,
+                    activeColor: secondaryBlue,
+                    onChanged: (val) {
+                      setState(() => selectedExpertise = val);
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -140,18 +144,20 @@ class _PsychologistListPageState extends State<PsychologistListPage> {
                 },
               ),
             ),
-            ...['3', '5', '8', '10'].map((e) => ListTile(
-                  title: Text('$e+ Years', style: GoogleFonts.poppins()),
-                  leading: Radio<String?>(
-                    value: e,
-                    groupValue: selectedExperience,
-                    activeColor: secondaryBlue,
-                    onChanged: (val) {
-                      setState(() => selectedExperience = val);
-                      Navigator.pop(context);
-                    },
-                  ),
-                )),
+            ...['3', '5', '8', '10'].map(
+              (e) => ListTile(
+                title: Text('$e+ Years', style: GoogleFonts.poppins()),
+                leading: Radio<String?>(
+                  value: e,
+                  groupValue: selectedExperience,
+                  activeColor: secondaryBlue,
+                  onChanged: (val) {
+                    setState(() => selectedExperience = val);
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -191,66 +197,72 @@ class _PsychologistListPageState extends State<PsychologistListPage> {
                 },
               ),
             ),
-            ...['Male', 'Female'].map((g) => ListTile(
-                  title: Text(g, style: GoogleFonts.poppins()),
-                  leading: Radio<String?>(
-                    value: g,
-                    groupValue: selectedGender,
-                    activeColor: secondaryBlue,
-                    onChanged: (val) {
-                      setState(() => selectedGender = val);
-                      Navigator.pop(context);
-                    },
-                  ),
-                )),
+            ...['Male', 'Female'].map(
+              (g) => ListTile(
+                title: Text(g, style: GoogleFonts.poppins()),
+                leading: Radio<String?>(
+                  value: g,
+                  groupValue: selectedGender,
+                  activeColor: secondaryBlue,
+                  onChanged: (val) {
+                    setState(() => selectedGender = val);
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
- 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F6F6),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        elevation: 2,
+        shadowColor: Colors.black.withOpacity(0.3),
+        scrolledUnderElevation: 2,
+        titleSpacing: 12,
+        leadingWidth: 72,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 28.0, top: 8.0, bottom: 8.0),
+          child: InkWell(
+            onTap: () => Navigator.pop(context),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFF7C8D8),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.arrow_back_ios_new,
+                color: Colors.black,
+                size: 18,
+              ),
+            ),
+          ),
+        ),
+        title: const Text(
+          'Recommended Experts',
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Column(
           children: [
-            // AppBar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: accentPink,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Image.asset('assets/images/back.png'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Recommended Experts',
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Filter row
+            const SizedBox(height: 14),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
                   _filterChip(
@@ -273,6 +285,7 @@ class _PsychologistListPageState extends State<PsychologistListPage> {
                 ],
               ),
             ),
+
             const SizedBox(height: 8),
 
             // List
@@ -316,13 +329,15 @@ class _PsychologistListPageState extends State<PsychologistListPage> {
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => PsychologistDetailPage(psychologist: p),
+                            builder: (_) =>
+                                PsychologistDetailPage(psychologist: p),
                           ),
                         ),
                         onChat: () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => PsychologistDetailPage(psychologist: p),
+                            builder: (_) =>
+                                PsychologistDetailPage(psychologist: p),
                           ),
                         ),
                       );
@@ -337,8 +352,11 @@ class _PsychologistListPageState extends State<PsychologistListPage> {
     );
   }
 
-  Widget _filterChip(String label,
-      {bool selected = false, required VoidCallback onTap}) {
+  Widget _filterChip(
+    String label, {
+    bool selected = false,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
