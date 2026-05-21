@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Tambahan: import Firestore
 
 // ─── ROUTES ─────────────────────────────────────────────────────
-const String _routeLoggedIn  = '/dashboard'; // sudah login → dashboard
-const String _routeLoggedOut = '/opening';   // belum login → opening page
+const String _routeUserDashboard = '/dashboard';               // User biasa
+const String _routePsychDashboard = '/psychologist-dashboard'; // Psikolog
+const String _routeLoggedOut     = '/opening';                // Belum login
 
 // ─── ASSET PATHS ────────────────────────────────────────────────
 const String _icon1Path = 'assets/images/icon1.png';
@@ -115,7 +117,7 @@ class _SplashScreenState extends State<SplashScreen>
     // Jalankan cek session + tunggu loading bar — keduanya paralel
     // Navigate setelah KEDUANYA selesai
     final results = await Future.wait([
-      _checkSession(),                          // cek SharedPreferences
+      _checkSession(),                          // Sekarang mengembalikan string route tujuan
       _loadingController.forward(              // tunggu bar penuh
         from: _loadingController.value,
       ).orCancel.then((_) => true).catchError((_) => true),
@@ -123,15 +125,57 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
-    final bool loggedIn = results[0] as bool;
+    final String targetRoute = results[0] as String;
     Navigator.pushReplacementNamed(
       context,
-      loggedIn ? _routeLoggedIn : _routeLoggedOut,
+      targetRoute,
     );
   }
 
-  Future<bool> _checkSession() async {
-    return FirebaseAuth.instance.currentUser != null;
+  // Perubahan: Fungsi ini sekarang mereturn rute tujuan berupa String
+  Future<String> _checkSession() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    
+    // Jika user belum login, langsung arahkan ke opening page
+    if (user == null) {
+      return _routeLoggedOut;
+    }
+
+    try {
+      // 1. Cek di koleksi 'users'
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (userDoc.exists) {
+        Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
+        String role = data['role'] ?? 'user';
+
+        if (role == 'psychologist') {
+          return _routePsychDashboard;
+        } else {
+          return _routeUserDashboard;
+        }
+      } else {
+        // 2. Jika tidak ada di 'users', cek di koleksi 'psychologists'
+        DocumentSnapshot psychDoc = await FirebaseFirestore.instance
+            .collection('psychologists')
+            .doc(user.uid)
+            .get();
+
+        if (psychDoc.exists) {
+          return _routePsychDashboard;
+        } else {
+          // Data tidak ditemukan di kedua dokumen, force sign out demi keamanan
+          await FirebaseAuth.instance.signOut();
+          return _routeLoggedOut;
+        }
+      }
+    } catch (e) {
+      // Jika terjadi error (misal offline/gagal fetch data), kembalikan ke opening page atau handle sesuai kebijakan app
+      return _routeLoggedOut;
+    }
   }
 
   @override
@@ -257,15 +301,15 @@ class _SplashScreenState extends State<SplashScreen>
               FadeTransition(
                 opacity: _iconsFade,
                 child: SizedBox(
-                width: size.width,
-                height: size.width * 0.82,
-                child: Center(
-                  child: Image.asset(
-                    _iconsCombinedPath,
-                    fit: BoxFit.contain,
+                  width: size.width,
+                  height: size.width * 0.82,
+                  child: Center(
+                    child: Image.asset(
+                      _iconsCombinedPath,
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
-              ),
               ),
 
               const Spacer(),
@@ -296,4 +340,3 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 }
-
