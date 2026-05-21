@@ -342,9 +342,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
             // ── Input bar ─────────────────────────────────────
             Container(
-              padding: EdgeInsets.only(
+              padding: const EdgeInsets.only(
                 left: 12, right: 12, top: 10,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 10,
+                bottom: 10,
               ),
               decoration: const BoxDecoration(
                 color: Colors.white,
