@@ -48,7 +48,7 @@ class _ChatRoomPsikologScreenState extends State<ChatRoomPsikologScreen> {
     FirebaseFirestore.instance
       .collection('chat_rooms')
       .doc(widget.roomId)
-      .update({'unread_count': 0});
+      .set({'unread_psikolog': 0}, SetOptions(merge: true));
   }
 
   @override
@@ -83,6 +83,20 @@ class _ChatRoomPsikologScreenState extends State<ChatRoomPsikologScreen> {
     if (text.isEmpty) return;
     _textController.clear();
     await ChatService.sendText(roomId: widget.roomId, text: text);
+    
+    // PERBAIKAN: Menggunakan .set(merge:true) dan increment unread_user
+    await FirebaseFirestore.instance
+        .collection('chat_rooms')
+        .doc(widget.roomId)
+        .set({
+      'last_message': text,
+      'last_message_at': FieldValue.serverTimestamp(),
+      'psikolog_uid': _currentUid,
+      'user_uid': widget.userUid,
+      'status': 'Active',
+      'unread_user': FieldValue.increment(1), 
+    }, SetOptions(merge: true));
+
     _scrollToBottom();
   }
 
