@@ -11,20 +11,18 @@ class ChatService {
   static final _auth      = FirebaseAuth.instance;
 
   // ─── Cloudinary config ────────────────────────────────────
-  static const String _cloudName    = 'drkxaqn7z';
-  static const String _uploadPreset = 'mooya_preset';
+  static const String _cloudName       = 'drkxaqn7z';
+  static const String _uploadPresetImg = 'mooya_preset';     // Khusus Gambar
+  static const String _uploadPresetDoc = 'mooya_preset_doc'; // Khusus Dokumen (Yang baru dibuat)
 
   // ─── Get current user uid ─────────────────────────────────
   static String get currentUid => _auth.currentUser?.uid ?? '';
 
   // ─── Buat atau ambil room chat yang sudah ada ─────────────
-  // Kalau room antara userUid dan psikologUid sudah ada → return roomId lama
-  // Kalau belum ada → buat baru
   static Future<String> getOrCreateRoom({
     required String userUid,
     required String psikologUid,
   }) async {
-    // Cek apakah room sudah ada
     final existing = await _firestore
         .collection('chat_rooms')
         .where('user_uid', isEqualTo: userUid)
@@ -36,7 +34,6 @@ class ChatService {
       return existing.docs.first.id;
     }
 
-    // Buat room baru
     final roomRef = await _firestore.collection('chat_rooms').add({
       'user_uid':      userUid,
       'psikolog_uid':  psikologUid,
@@ -85,7 +82,6 @@ class ChatService {
 
     final batch = _firestore.batch();
 
-    // Tambah pesan ke subcollection
     final msgRef = _firestore
         .collection('chat_rooms')
         .doc(roomId)
@@ -100,7 +96,6 @@ class ChatService {
       'created_at': FieldValue.serverTimestamp(),
     });
 
-    // Update last message di room
     final roomRef = _firestore.collection('chat_rooms').doc(roomId);
     batch.update(roomRef, {
       'last_message':    text.trim(),
@@ -111,21 +106,33 @@ class ChatService {
   }
 
   // ─── Upload file/gambar ke Cloudinary ────────────────────
-  static Future<String?> _uploadToCloudinary(File file, String type) async {
+  static Future<String?> _uploadToCloudinary({
+    required File file, 
+    required String type, 
+    required String preset,
+  }) async {
     try {
       final uri = Uri.parse(
         'https://api.cloudinary.com/v1_1/$_cloudName/$type/upload',
       );
 
       final request = http.MultipartRequest('POST', uri)
-        ..fields['upload_preset'] = _uploadPreset
+        ..fields['upload_preset'] = preset
         ..files.add(await http.MultipartFile.fromPath('file', file.path));
 
       final response = await request.send();
+      final body     = await response.stream.bytesToString();
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(await response.stream.bytesToString());
-        return data['secure_url'] as String;
+        final data = jsonDecode(body);
+
+        // Untuk raw file: ambil secure_url lalu sisipkan fl_attachment
+        // supaya Cloudinary mengizinkan download langsung (bypass 401)
+        String url = data['secure_url'] as String;
+        if (type == 'raw') {
+          url = url.replaceFirst('/upload/', '/upload/fl_attachment/');
+        }
+        return url;
       }
       return null;
     } catch (e) {
@@ -143,7 +150,12 @@ class ChatService {
     if (picked == null) return;
 
     final file = File(picked.path);
-    final url  = await _uploadToCloudinary(file, 'image');
+    // Memakai preset gambar
+    final url  = await _uploadToCloudinary(
+      file: file, 
+      type: 'image', 
+      preset: _uploadPresetImg,
+    );
     if (url == null) return;
 
     final batch = _firestore.batch();
@@ -181,7 +193,13 @@ class ChatService {
 
     final file     = File(result.files.single.path!);
     final fileName = result.files.single.name;
-    final url      = await _uploadToCloudinary(file, 'raw');
+    
+    // Memakai preset dokumen khusus (raw)
+    final url      = await _uploadToCloudinary(
+      file: file, 
+      type: 'raw', 
+      preset: _uploadPresetDoc,
+    );
     if (url == null) return;
 
     final batch = _firestore.batch();
