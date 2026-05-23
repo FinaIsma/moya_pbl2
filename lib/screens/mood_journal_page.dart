@@ -183,6 +183,7 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
 
                   final moods = filterData(snapshot.data!);
                   final grouped = groupData(moods);
+                  final groupedEntries = grouped.entries.toList();
 
                   return ListView(
                     padding: const EdgeInsets.symmetric(
@@ -190,9 +191,12 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
                       vertical: 10,
                     ),
                     children: [
-                      ...grouped.entries.map(
-                        (entry) => _buildSection(entry.key, entry.value),
-                      ),
+                      for (var i = 0; i < groupedEntries.length; i++)
+                        _buildSection(
+                          groupedEntries[i].key,
+                          groupedEntries[i].value,
+                          isFirst: i == 0,
+                        ),
                     ],
                   );
                 },
@@ -204,40 +208,65 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
     );
   }
 
-  Widget _buildAppBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: accentPink,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Image.asset('assets/images/back.png'),
+ Widget _buildAppBar(BuildContext context) {
+  return Container(
+    padding: const EdgeInsets.only(
+      left: 20,
+      right: 16,
+      top: 14,
+      bottom: 14,
+    ),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.08),
+          blurRadius: 4,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+
+    child: Row(
+      children: [
+        InkWell(
+          onTap: () => Navigator.pop(context),
+          borderRadius: BorderRadius.circular(12),
+
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7C8D8),
+              borderRadius: BorderRadius.circular(12),
+            ),
+
+            child: const Icon(
+              Icons.arrow_back_ios_new,
+              color: Colors.black,
+              size: 18,
             ),
           ),
-          const SizedBox(width: 12),
-          Text(
-            'Mood Journal',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: secondaryBlue,
-            ),
+        ),
+
+        const SizedBox(width: 16),
+
+        Text(
+          'Mood Journal',
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildFilterRow(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       child: Row(
         children: [
           ...filters.map(
@@ -247,16 +276,22 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
                 selectedDate = null;
               }),
               child: Container(
-                margin: const EdgeInsets.only(right: 6),
+                margin: const EdgeInsets.only(right: 8),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 15,
-                  vertical: 7,
+                  horizontal: 16,
+                  vertical: 10,
                 ),
                 decoration: BoxDecoration(
                   color: selectedFilter == f ? secondaryBlue : primaryBlue,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(f),
+                child: Text(
+                  f,
+                  style: TextStyle(
+                    color: selectedFilter == f ? Colors.white : Colors.black87,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
           ),
@@ -279,11 +314,11 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
     );
   }
 
-  Widget _buildSection(String label, List<Mood> items) {
+  Widget _buildSection(String label, List<Mood> items, {bool isFirst = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 16),
+        if (!isFirst) const SizedBox(height: 16),
         Row(
           children: [
             Container(

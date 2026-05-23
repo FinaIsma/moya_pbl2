@@ -48,6 +48,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   void initState() {
     super.initState();
     ChatService.markAsRead(widget.roomId);
+    FirebaseFirestore.instance
+        .collection('chat_rooms')
+        .doc(widget.roomId)
+        .set({'unread_user': 0}, SetOptions(merge: true));
   }
 
   @override
@@ -139,11 +143,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     await FirebaseFirestore.instance
         .collection('chat_rooms')
         .doc(widget.roomId)
-        .update({
+        .set({
       'last_message': text,
       'last_message_at': FieldValue.serverTimestamp(),
-      'unread_count': FieldValue.increment(1), 
-    });
+      'psikolog_uid': widget.psikologUid, 
+      'user_uid': _currentUid,            
+      'status': 'Active',
+      'unread_psikolog': FieldValue.increment(1), 
+    }, SetOptions(merge: true));
     
     _scrollToBottom();
   }

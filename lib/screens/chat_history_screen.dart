@@ -74,7 +74,8 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
           'psikolog_name': psikologName,
           'psikolog_photo': psikologPhoto,
           'last_message_at': data['last_message_at'],
-          'status': data['status'] ?? 'Active', // Default "Active"
+          'status': data['status'] ?? 'Active', 
+          'unread_user': data['unread_user'] ?? 0, 
         });
       }
 
@@ -118,7 +119,7 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
   String _formatTime(Timestamp? timestamp) {
     if (timestamp == null) return '';
     DateTime date = timestamp.toDate();
-    return DateFormat('HH.mm').format(date); // Format 24 Jam (misal: 13.00)
+    return DateFormat('HH.mm').format(date); 
   }
 
   @override
@@ -191,6 +192,7 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                         itemBuilder: (context, index) {
                           final chat = _filteredChats[index];
                           bool isActive = chat['status'].toString().toLowerCase() == 'active';
+                          int unreadCount = chat['unread_user']; 
 
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 16.0),
@@ -269,16 +271,39 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                                       ),
                                     ),
 
-                                    // WAKTU SAJA (Unread Count Dihapus)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 4.0),
-                                      child: Text(
-                                        _formatTime(chat['last_message_at']),
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 12,
-                                          color: Colors.black87,
+                                    // Waktu & Badge
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 4.0),
+                                          child: Text(
+                                            _formatTime(chat['last_message_at']),
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 12,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
                                         ),
-                                      ),
+                                        const SizedBox(height: 8),
+                                        
+                                        if (unreadCount > 0)
+                                          Container(
+                                            padding: const EdgeInsets.all(6),
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFF82C89A),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Text(
+                                              unreadCount.toString(),
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 10,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
                                     ),
                                   ],
                                 ),

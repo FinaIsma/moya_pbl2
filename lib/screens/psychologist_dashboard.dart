@@ -85,6 +85,7 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
           'last_message': data['last_message'] ?? 'No message yet',
           'last_message_at': data['last_message_at'],
           'status': data['status'] ?? 'Active',
+          'unread_psikolog': data['unread_psikolog'] ?? 0, 
         });
       }
 
@@ -259,6 +260,7 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
                         chatData['last_message'],
                         timeFormatted,
                         chatData['user_photo_url'], 
+                        chatData['unread_psikolog'] ?? 0,
                       ),
                     );
                   },
@@ -271,7 +273,7 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
     );
   }
 
-  Widget _buildConsultationCard(bool isActive, String userName, String lastMsg, String time, String userPhotoUrl) {
+  Widget _buildConsultationCard(bool isActive, String userName, String lastMsg, String time, String userPhotoUrl, int unreadCount) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -280,6 +282,7 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
         border: Border.all(color: const Color(0xFF9ECAD6).withOpacity(0.5)),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CircleAvatar(
             radius: 24,
@@ -292,6 +295,7 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const SizedBox(height: 2),
                 Text(
                   userName,
                   style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: const Color(0xFF1A4A54)),
@@ -304,7 +308,7 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                   decoration: BoxDecoration(
@@ -322,11 +326,30 @@ class _PsychologistDashboardState extends State<PsychologistDashboard> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                time,
-                style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey),
+              Padding(
+                padding: const EdgeInsets.only(top: 4.0),
+                child: Text(
+                  time,
+                  style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey),
+                ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
+              if (unreadCount > 0)
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF82C89A), 
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    unreadCount.toString(),
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
             ],
           ),
         ],
