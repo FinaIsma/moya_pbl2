@@ -3,6 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/chat_service.dart';
+import 'dart:io';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
 
 class ChatRoomPsikologScreen extends StatefulWidget {
   final String roomId;
@@ -70,6 +74,56 @@ class _ChatRoomPsikologScreenState extends State<ChatRoomPsikologScreen> {
     });
   }
 
+  Future<void> _downloadAndOpenFile(String url, String fileName) async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Mengunduh file...'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      // 1. Encode URL untuk menghindari error karena spasi atau karakter aneh
+      final safeUrl = Uri.encodeFull(url);
+      final response = await http.get(Uri.parse(safeUrl));
+
+      if (response.statusCode == 200) {
+        final dir = await getTemporaryDirectory();
+        
+        // 2. Sanitasi nama file (ubah spasi dan karakter ilegal jadi underscore)
+        final safeFileName = fileName
+            .replaceAll(RegExp(r'[^\w\s\.-]'), '_')
+            .replaceAll(' ', '_');
+            
+        final file = File('${dir.path}/$safeFileName');
+
+        await file.writeAsBytes(response.bodyBytes);
+
+        // 3. Buka file
+        final result = await OpenFilex.open(file.path);
+
+        if (result.type != ResultType.done) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Tidak bisa membuka file: ${result.message}')),
+            );
+          }
+        }
+      } else {
+        throw Exception('Gagal mengunduh (Status Code: ${response.statusCode})');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
   String _formatTime(Timestamp? ts) {
     if (ts == null) return '';
     final dt = ts.toDate();
@@ -117,38 +171,56 @@ class _ChatRoomPsikologScreenState extends State<ChatRoomPsikologScreen> {
         ),
       );
     } else if (type == 'image') {
-      content = ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: Image.network(
-          data['file_url'] ?? '',
-          width: 200,
-          fit: BoxFit.cover,
-          loadingBuilder: (_, child, progress) => progress == null
-              ? child
-              : const SizedBox(
-                  width: 200, height: 120,
-                  child: Center(child: CircularProgressIndicator()),
-                ),
+      content = GestureDetector(
+        onTap: () {
+          final url = data['file_url'] as String?;
+          if (url != null && url.isNotEmpty) {
+            final fileName = 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
+            _downloadAndOpenFile(url, fileName);
+          }
+        },
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Image.network(
+            data['file_url'] ?? '',
+            width: 200,
+            fit: BoxFit.cover,
+            loadingBuilder: (_, child, progress) => progress == null
+                ? child
+                : const SizedBox(
+                    width: 200, height: 120,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+          ),
         ),
       );
     } else {
-      content = Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.insert_drive_file_outlined,
-            color: _secondary, size: 28,
-          ),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              data['file_name'] ?? 'Document',
-              style: GoogleFonts.poppins(
-                fontSize: 13, color: _textMain,
-                decoration: TextDecoration.underline,
+      content = GestureDetector(
+        onTap: () {
+          final url = data['file_url'] as String?;
+          final fileName = data['file_name'] ?? 'document.file'; // Ambil nama asli
+          if (url != null && url.isNotEmpty) {
+            _downloadAndOpenFile(url, fileName);
+          }
+        },
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.insert_drive_file_outlined,
+              color: _secondary, size: 28,
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                data['file_name'] ?? 'Document',
+                style: GoogleFonts.poppins(
+                  fontSize: 13, color: _textMain,
+                  decoration: TextDecoration.underline,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     }
 
@@ -199,7 +271,7 @@ class _ChatRoomPsikologScreenState extends State<ChatRoomPsikologScreen> {
       ),
     );
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
