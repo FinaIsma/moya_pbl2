@@ -4,10 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:typed_data';
-import 'dart:io'; // Tambahkan ini biar 'File' nggak merah
-import 'dart:convert'; // Tambahkan ini
-import 'package:http/http.dart' as http; // Tambahkan ini
-import 'package:http_parser/http_parser.dart'; // Tambahkan ini
+import 'dart:io'; 
+import 'dart:convert'; 
+import 'package:http/http.dart' as http; 
+import 'package:http_parser/http_parser.dart'; 
 
 class MoodInputScreen extends StatefulWidget {
   const MoodInputScreen({super.key});
