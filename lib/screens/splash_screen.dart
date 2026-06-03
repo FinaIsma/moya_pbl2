@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Tambahan: import Firestore
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 // ─── ROUTES ─────────────────────────────────────────────────────
 const String _routeUserDashboard = '/dashboard';               // User biasa
@@ -132,48 +133,66 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  // Perubahan: Fungsi ini sekarang mereturn rute tujuan berupa String
-  Future<String> _checkSession() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    
-    // Jika user belum login, langsung arahkan ke opening page
-    if (user == null) {
-      return _routeLoggedOut;
-    }
+  Future<void> _saveFcmToken(String uid, String collection) async {
+    final token = await FirebaseMessaging.instance.getToken();
+    if (token == null) return;
+
+    await FirebaseFirestore.instance
+        .collection(collection)
+        .doc(uid)
+        .set({'fcm_token': token}, SetOptions(merge: true));
+  }
+
+ Future<String> _checkSession() async {
+  User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return _routeLoggedOut;
 
     try {
-      // 1. Cek di koleksi 'users'
+      // Cek collection users (user biasa)
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .get();
 
       if (userDoc.exists) {
-        Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
-        String role = data['role'] ?? 'user';
-
-        if (role == 'psychologist') {
-          return _routePsychDashboard;
-        } else {
-          return _routeUserDashboard;
-        }
-      } else {
-        // 2. Jika tidak ada di 'users', cek di koleksi 'psychologists'
-        DocumentSnapshot psychDoc = await FirebaseFirestore.instance
-            .collection('psychologists')
-            .doc(user.uid)
-            .get();
-
-        if (psychDoc.exists) {
-          return _routePsychDashboard;
-        } else {
-          // Data tidak ditemukan di kedua dokumen, force sign out demi keamanan
-          await FirebaseAuth.instance.signOut();
-          return _routeLoggedOut;
-        }
+        await _saveFcmToken(user.uid, 'users');
+        return _routeUserDashboard;
       }
+
+        print('userDoc.exists: ${userDoc.exists}');
+
+      // Cek collection psychologists
+      QuerySnapshot psychQuery = await FirebaseFirestore.instance
+          .collection('psychologists')
+          .where('uid', isEqualTo: user.uid)
+          .limit(1)
+          .get();
+
+          print('psychQuery count: ${psychQuery.docs.length}');
+
+      if (psychQuery.docs.isNotEmpty) {
+        final psychDocId = psychQuery.docs.first.id;
+
+        final token = await FirebaseMessaging.instance.getToken();
+
+        if (token != null) {
+          await FirebaseFirestore.instance
+              .collection('psychologists')
+              .doc(psychDocId)
+              .set({
+            'fcm_token': token,
+          }, SetOptions(merge: true));
+        }
+
+        return _routePsychDashboard;
+      }
+
+      // Tidak ditemukan di keduanya
+      await FirebaseAuth.instance.signOut();
+      return _routeLoggedOut;
+
     } catch (e) {
-      // Jika terjadi error (misal offline/gagal fetch data), kembalikan ke opening page atau handle sesuai kebijakan app
       return _routeLoggedOut;
     }
   }

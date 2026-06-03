@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // untuk ambil role user
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -48,60 +49,92 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
+  Future<void> _saveFcmToken(String uid, String collection) async {
+    final token = await FirebaseMessaging.instance.getToken();
+    if (token == null) return;
+    await FirebaseFirestore.instance
+    .collection(collection)
+    .doc(uid)
+    .set({'fcm_token': token}, SetOptions(merge: true));
+  }
+
   // ─── Sign In ────────────────────────────────────────────────
   Future<void> _signIn() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() {
       _isLoading = true;
       _errorMessage = null;
-    });
+  });
 
     try {
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
       User? user = userCredential.user;
+      if (user == null) return;
 
-      if (user != null) {
-        DocumentSnapshot userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .get();
+      print('========== LOGIN ==========');
+      print('UID LOGIN: ${user.uid}');
+      print('EMAIL: ${user.email}');
+      
+      // Cek collection users (user biasa)
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
 
-        if (!mounted) return;
+          print('USER DOC EXISTS: ${userDoc.exists}');
+      if (!mounted) return;
 
-        if (userDoc.exists) {
-          Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
-          String role = data['role'] ?? 'user';
-
-          if (mounted) {
-            if (role == 'psychologist') {
-              Navigator.pushReplacementNamed(context, '/psychologist-dashboard');
-            } else {
-              Navigator.pushReplacementNamed(context, '/dashboard');
-            }
-          }
-        } else {
-          DocumentSnapshot psychDoc = await FirebaseFirestore.instance
-              .collection('psychologists')
-              .doc(user.uid)
-              .get();
-
-          if (!mounted) return;
-
-          if (psychDoc.exists) {
-            if (mounted) {
-              Navigator.pushReplacementNamed(context, '/psychologist-dashboard');
-            }
-          } else {
-            setState(() => _errorMessage = 'Data user tidak ditemukan di database.');
-            await FirebaseAuth.instance.signOut();
-          }
-        }
+      if (userDoc.exists) {
+        await _saveFcmToken(user.uid, 'users');
+        Navigator.pushReplacementNamed(context, '/dashboard');
+        return;
       }
+
+      // Cek collection psychologists by field uid
+      QuerySnapshot psychQuery = await FirebaseFirestore.instance
+          .collection('psychologists')
+          .where('uid', isEqualTo: user.uid)
+          .limit(1)
+          .get();
+
+          print('PSYCH COUNT: ${psychQuery.docs.length}');
+
+      if (psychQuery.docs.isNotEmpty) {
+        print('PSYCH DOC ID: ${psychQuery.docs.first.id}');
+        print('PSYCH DATA: ${psychQuery.docs.first.data()}');
+      }
+
+      if (!mounted) return;
+
+      if (psychQuery.docs.isNotEmpty) {
+        final psychDocId = psychQuery.docs.first.id;
+
+        final token = await FirebaseMessaging.instance.getToken();
+
+        if (token != null) {
+          await FirebaseFirestore.instance
+              .collection('psychologists')
+              .doc(psychDocId)
+              .set({
+            'fcm_token': token,
+          }, SetOptions(merge: true));
+        }
+
+        Navigator.pushReplacementNamed(
+            context,
+            '/psychologist-dashboard');
+        return;
+      }
+
+      // Tidak ditemukan di keduanya
+      setState(() => _errorMessage = 'Data user tidak ditemukan di database.');
+      await FirebaseAuth.instance.signOut();
+
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         setState(() {
@@ -117,9 +150,7 @@ class _LoginScreenState extends State<LoginScreen>
         });
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
