@@ -4,6 +4,7 @@ import '../models/mood.dart';
 import '../widgets/mood_card.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class MoodJournalPage extends StatefulWidget {
   const MoodJournalPage({super.key});
@@ -63,6 +64,35 @@ class _MoodJournalPageState extends State<MoodJournalPage> {
       initialDate: selectedDate ?? DateTime.now(),
       firstDate: DateTime(2024),
       lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            textTheme: GoogleFonts.poppinsTextTheme(
+              Theme.of(context).textTheme,
+            ),
+            colorScheme: ColorScheme.light(
+              primary: secondaryBlue,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: const Color(0xFF1A1A2E),
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: secondaryBlue,
+                textStyle: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            dialogTheme: DialogThemeData(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       setState(() {

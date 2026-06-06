@@ -42,6 +42,8 @@ class DetailMoodPage extends StatelessWidget {
     final dateStr =
         '${mood.date.day.toString().padLeft(2, '0')}/${mood.date.month.toString().padLeft(2, '0')}/${mood.date.year}';
 
+    final bool hasPhoto = mood.photoUrl != null && mood.photoUrl!.isNotEmpty;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFEAEA),
       body: SafeArea(
@@ -89,7 +91,7 @@ class DetailMoodPage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // Emoji + Photo Row
+              // Emoji + Photo or Journal Row
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -112,8 +114,6 @@ class DetailMoodPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-
-                  // Photo box
                   Expanded(
                     child: Container(
                       height: 240,
@@ -125,37 +125,35 @@ class DetailMoodPage extends StatelessWidget {
                           width: 1.2,
                         ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.all(10),
-                            child: Text(
-                              'Photo',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                                color: Color(0xFF748DAE),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Container(
-                              margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF0F4F8),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: const Color(0xFF9ECAD6),
-                                  width: 1,
+                      child: hasPhoto
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Padding(
+                                  padding: EdgeInsets.all(10),
+                                  child: Text(
+                                    'Photo',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                      color: Color(0xFF748DAE),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child:
-                                    mood.photoUrl != null &&
-                                        mood.photoUrl!.isNotEmpty
-                                    ? GestureDetector(
+                                Expanded(
+                                  child: Container(
+                                    margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF0F4F8),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: const Color(0xFF9ECAD6),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: GestureDetector(
                                         onTap: () {
                                           showDialog(
                                             context: context,
@@ -178,22 +176,18 @@ class DetailMoodPage extends StatelessWidget {
                                                     top: 40,
                                                     right: 16,
                                                     child: GestureDetector(
-                                                      onTap: () =>
-                                                          Navigator.pop(
-                                                            context,
-                                                          ),
+                                                      onTap: () => Navigator.pop(
+                                                        context,
+                                                      ),
                                                       child: Container(
-                                                        padding:
-                                                            const EdgeInsets.all(
-                                                              8,
-                                                            ),
+                                                        padding: const EdgeInsets.all(
+                                                          8,
+                                                        ),
                                                         decoration:
                                                             const BoxDecoration(
-                                                              color: Colors
-                                                                  .white24,
-                                                              shape: BoxShape
-                                                                  .circle,
-                                                            ),
+                                                          color: Colors.white24,
+                                                          shape: BoxShape.circle,
+                                                        ),
                                                         child: const Icon(
                                                           Icons.close,
                                                           color: Colors.white,
@@ -226,37 +220,70 @@ class DetailMoodPage extends StatelessWidget {
                                               },
                                           errorBuilder:
                                               (context, error, stackTrace) {
-                                                return Center(
-                                                  child: Icon(
-                                                    Icons.broken_image_outlined,
-                                                    color: Colors.grey.shade400,
-                                                    size: 40,
-                                                  ),
-                                                );
-                                              },
-                                        ),
-                                      )
-                                    : Center(
-                                        child: Icon(
-                                          Icons.image_outlined,
-                                          color: Colors.grey.shade400,
-                                          size: 40,
+                                            return Center(
+                                              child: Icon(
+                                                Icons.broken_image_outlined,
+                                                color: Colors.grey.shade400,
+                                                size: 40,
+                                              ),
+                                            );
+                                          },
                                         ),
                                       ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Journal',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Color(0xFF748DAE),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Expanded(
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF0F4F8),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: const Color(0xFF9ECAD6),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        mood.note,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.black87,
+                                          height: 1.6,
+                                        ),
+                                        textAlign: TextAlign.justify,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-
-              // Journal section
-              Container(
-                width: double.infinity,
+              if (hasPhoto) ...[
+                const SizedBox(height: 20),
+                // Journal section
+                Container(
+                  width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -302,6 +329,7 @@ class DetailMoodPage extends StatelessWidget {
                   ],
                 ),
               ),
+              ]
             ],
           ),
         ),
