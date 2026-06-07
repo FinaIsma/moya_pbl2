@@ -19,6 +19,7 @@ dependencies:
   intl: ^0.20.2
   image_picker: ^1.0.7
   file_picker: ^8.0.0
+  dart_jsonwebtoken: ^2.8.0
   firebase_storage: ^12.4.10
   cloudflare_r2: ^0.0.14
   http: ^1.6.0
@@ -31,6 +32,8 @@ dependencies:
   screenshot: ^3.0.0
   url_launcher: ^6.3.2
   open_filex: ^4.7.0
+  firebase_messaging: ^15.2.10
+  flutter_local_notifications: ^19.0.0
 
 dev_dependencies:
   flutter_test:
@@ -42,6 +45,8 @@ flutter:
   assets:
     - assets/images/icon1.png
     - assets/images/icon2.png
+    - assets/images/cloud1.png
+    - assets/images/cloud2.png
     - assets/images/icons.png
     - assets/images/icons1.png
     - assets/images/emot1.png
@@ -82,3 +87,4 @@ flutter:
     - assets/images/icon_sun.png
     - assets/images/icon_noday.png
     - assets/images/emot0.png
+    - assets/images/bg_chat.png

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Tambahan: import Firestore
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 // ─── ROUTES ─────────────────────────────────────────────────────
 const String _routeUserDashboard = '/dashboard';               // User biasa
@@ -38,6 +39,11 @@ class _SplashScreenState extends State<SplashScreen>
   // ─── Loading bar ─────────────────────────────────────────────
   late AnimationController _loadingController;
   late Animation<double> _loadingProgress;
+
+  late AnimationController _floatingController;
+  late Animation<double> _floatingAnimation;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
@@ -96,6 +102,36 @@ class _SplashScreenState extends State<SplashScreen>
     _loadingProgress = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _loadingController, curve: Curves.easeInOut),
     );
+
+    _floatingController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat(reverse: true);
+
+    _floatingAnimation = Tween<double>(
+      begin: -8,
+      end: 8,
+    ).animate(
+      CurvedAnimation(
+        parent: _floatingController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+
+    _pulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.05,
+    ).animate(
+      CurvedAnimation(
+        parent: _pulseController,
+        curve: Curves.easeInOut,
+      ),
+    );
   }
 
   Future<void> _startSequence() async {
@@ -103,6 +139,10 @@ class _SplashScreenState extends State<SplashScreen>
 
     // Logo & loading bar mulai bersamaan
     _logoController.forward();
+    _logoController.forward().then((_) {
+    _pulseController.repeat(reverse: true);
+  });
+  
     _loadingController.forward();
 
     await Future.delayed(const Duration(milliseconds: 400));
@@ -132,48 +172,66 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  // Perubahan: Fungsi ini sekarang mereturn rute tujuan berupa String
-  Future<String> _checkSession() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    
-    // Jika user belum login, langsung arahkan ke opening page
-    if (user == null) {
-      return _routeLoggedOut;
-    }
+  Future<void> _saveFcmToken(String uid, String collection) async {
+    final token = await FirebaseMessaging.instance.getToken();
+    if (token == null) return;
+
+    await FirebaseFirestore.instance
+        .collection(collection)
+        .doc(uid)
+        .set({'fcm_token': token}, SetOptions(merge: true));
+  }
+
+ Future<String> _checkSession() async {
+  User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return _routeLoggedOut;
 
     try {
-      // 1. Cek di koleksi 'users'
+      // Cek collection users (user biasa)
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .get();
 
       if (userDoc.exists) {
-        Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
-        String role = data['role'] ?? 'user';
-
-        if (role == 'psychologist') {
-          return _routePsychDashboard;
-        } else {
-          return _routeUserDashboard;
-        }
-      } else {
-        // 2. Jika tidak ada di 'users', cek di koleksi 'psychologists'
-        DocumentSnapshot psychDoc = await FirebaseFirestore.instance
-            .collection('psychologists')
-            .doc(user.uid)
-            .get();
-
-        if (psychDoc.exists) {
-          return _routePsychDashboard;
-        } else {
-          // Data tidak ditemukan di kedua dokumen, force sign out demi keamanan
-          await FirebaseAuth.instance.signOut();
-          return _routeLoggedOut;
-        }
+        await _saveFcmToken(user.uid, 'users');
+        return _routeUserDashboard;
       }
+
+        print('userDoc.exists: ${userDoc.exists}');
+
+      // Cek collection psychologists
+      QuerySnapshot psychQuery = await FirebaseFirestore.instance
+          .collection('psychologists')
+          .where('uid', isEqualTo: user.uid)
+          .limit(1)
+          .get();
+
+          print('psychQuery count: ${psychQuery.docs.length}');
+
+      if (psychQuery.docs.isNotEmpty) {
+        final psychDocId = psychQuery.docs.first.id;
+
+        final token = await FirebaseMessaging.instance.getToken();
+
+        if (token != null) {
+          await FirebaseFirestore.instance
+              .collection('psychologists')
+              .doc(psychDocId)
+              .set({
+            'fcm_token': token,
+          }, SetOptions(merge: true));
+        }
+
+        return _routePsychDashboard;
+      }
+
+      // Tidak ditemukan di keduanya
+      await FirebaseAuth.instance.signOut();
+      return _routeLoggedOut;
+
     } catch (e) {
-      // Jika terjadi error (misal offline/gagal fetch data), kembalikan ke opening page atau handle sesuai kebijakan app
       return _routeLoggedOut;
     }
   }
@@ -185,6 +243,7 @@ class _SplashScreenState extends State<SplashScreen>
     _iconsController.dispose();
     _subtitleController.dispose();
     _loadingController.dispose();
+    _floatingController.dispose();
     super.dispose();
   }
 
@@ -209,25 +268,30 @@ class _SplashScreenState extends State<SplashScreen>
                   scale: _logoScale,
                   child: Column(
                     children: [
-                      Image.asset(
-                        _icon1Path,
-                        width: 56,
-                        height: 56,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => Container(
+
+                      ScaleTransition(
+                        scale: _pulseAnimation,
+                        child: Image.asset(
+                          _icon1Path,
                           width: 56,
                           height: 56,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF5CBCB),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Icon(
-                            Icons.sentiment_satisfied_alt,
-                            color: Color(0xFF748DAE),
-                            size: 32,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF5CBCB),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Icon(
+                              Icons.sentiment_satisfied_alt,
+                              color: Color(0xFF748DAE),
+                              size: 32,
+                            ),
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 12),
 
                       // Animated Loading Bar
@@ -248,15 +312,38 @@ class _SplashScreenState extends State<SplashScreen>
                                     color: const Color(0xFFE4ECF0),
                                   ),
                                   // Fill
-                                  Container(
-                                    width: 40 * _loadingProgress.value,
-                                    height: 4,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(8),
-                                      gradient: const LinearGradient(
-                                        colors: [
-                                          Color(0xFF9ECAD6),
-                                          Color(0xFF748DAE),
+                                  Positioned(
+                                    child: Container(
+                                      width: 40 * _loadingProgress.value,
+                                      height: 4,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(8),
+                                        gradient: const LinearGradient(
+                                          colors: [
+                                            Color(0xFF9ECAD6),
+                                            Color(0xFF748DAE),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  // Glow Dot
+                                  Positioned(
+                                    left: (40 * _loadingProgress.value) - 4,
+                                    top: -2,
+                                    child: Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFF9ECAD6).withOpacity(0.8),
+                                            blurRadius: 8,
+                                            spreadRadius: 2,
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -304,9 +391,18 @@ class _SplashScreenState extends State<SplashScreen>
                   width: size.width,
                   height: size.width * 0.82,
                   child: Center(
-                    child: Image.asset(
-                      _iconsCombinedPath,
-                      fit: BoxFit.contain,
+                    child: AnimatedBuilder(
+                      animation: _floatingAnimation,
+                      builder: (_, child) {
+                        return Transform.translate(
+                          offset: Offset(0, _floatingAnimation.value),
+                          child: child,
+                        );
+                      },
+                      child: Image.asset(
+                        _iconsCombinedPath,
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
                 ),

@@ -214,15 +214,39 @@ class _CommunityScreenState extends State<CommunityScreen>
                   builder: (_) => PostDetailScreen(postId: postId),
                 ),
               ),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFE4ECF0)),
-                ),
-                child: Text(data['content'] ?? '',
+child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(
+                    16,
+                    16,
+                    16,
+                    12,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.white,
+                        Color(0xFFFCFDFE),
+                      ],
+                    ),
+
+                    borderRadius: BorderRadius.circular(18),
+
+                    border: Border.all(
+                      color: const Color(0xFFE9EEF2),
+                    ),
+
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 14,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Text(data['content'] ?? '',
                   style: GoogleFonts.poppins(
                     fontSize: 13, color: _textMain, height: 1.6,
                   ),
@@ -240,10 +264,18 @@ class _CommunityScreenState extends State<CommunityScreen>
                   onTap: () => _toggleLike(postId, likes),
                   child: Row(
                     children: [
-                      Icon(
-                        liked ? Icons.favorite : Icons.favorite_border,
-                        color: liked ? Colors.red : const Color(0xFFABB8C3),
-                        size: 22,
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(
+                          liked
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          key: ValueKey(liked),
+                          color: liked
+                              ? const Color(0xFFFF6B81)
+                              : const Color(0xFFABB8C3),
+                          size: 22,
+                        ),
                       ),
                       if (likes.isNotEmpty) ...[
                         const SizedBox(width: 4),
@@ -267,20 +299,21 @@ class _CommunityScreenState extends State<CommunityScreen>
                   ),
                   child: Container(
                     width: 36, height: 36,
-                    decoration: const BoxDecoration(
-                      color: _secondary, shape: BoxShape.circle,
+                    decoration: BoxDecoration(
+                      color: _secondary.withOpacity(0.12),
+                      shape: BoxShape.circle,
                     ),
                     child: const Icon(
-                      Icons.reply_rounded, color: Colors.white, size: 18,
+                      Icons.reply_rounded,
+                      color: _secondary,
+                      size: 18,
                     ),
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 8),
-            const Divider(color: Color(0xFFE4ECF0)),
-            const SizedBox(height: 8),
+        const SizedBox(height: 18),
           ],
         );
       },
@@ -368,7 +401,6 @@ class _CommunityScreenState extends State<CommunityScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isMyPosts = _tabController.index == 1;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -380,23 +412,44 @@ class _CommunityScreenState extends State<CommunityScreen>
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: Row(
                 children: [
-                  Image.asset(
-                    'assets/images/icon1.png',
-                    width: 52, height: 52,
-                    errorBuilder: (_, __, ___) => Container(
-                      width: 52, height: 52,
-                      decoration: BoxDecoration(
-                        color: _accent,
-                        borderRadius: BorderRadius.circular(14),
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: _accent.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Image.asset(
+                        'assets/images/icon1.png',
                       ),
-                      child: const Icon(Icons.people, color: _secondary, size: 28),
                     ),
                   ),
+
                   const SizedBox(width: 12),
-                  Text('Support Community',
-                    style: GoogleFonts.poppins(
-                      fontSize: 22, fontWeight: FontWeight.w800, color: _textMain,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Support Community',
+                        style: GoogleFonts.poppins(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: _textMain,
+                        ),
+                      ),
+
+                      const SizedBox(height: 2),
+
+                      Text(
+                        'Safe Place to Share your Feelings',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          color: _textSub,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -424,12 +477,23 @@ class _CommunityScreenState extends State<CommunityScreen>
             ),
 
             Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildAllPosts(),
-                  _buildMyPosts(),
-                ],
+              child: Container(
+                decoration: const BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage(
+                      "assets/images/bg_chat.png",
+                    ),
+                    fit: BoxFit.cover,
+                    opacity: 0.03,
+                  ),
+                ),
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildAllPosts(),
+                    _buildMyPosts(),
+                  ],
+                ),
               ),
             ),
           ],
@@ -437,18 +501,22 @@ class _CommunityScreenState extends State<CommunityScreen>
       ),
 
       // FAB hanya muncul di tab My Posts
-      floatingActionButton: isMyPosts
-          ? FloatingActionButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CreatePostScreen()),
-              ),
-              backgroundColor: _secondary,
-              elevation: 4,
-              shape: const CircleBorder(),
-              child: const Icon(Icons.edit_rounded, color: Colors.white, size: 24),
-            )
-          : null,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const CreatePostScreen(),
+          ),
+        ),
+        backgroundColor: _secondary,
+        elevation: 5,
+        shape: const CircleBorder(),
+        child: const Icon(
+          Icons.add_rounded,
+          color: Colors.white,
+          size: 30,
+        ),
+      ),
     );
   }
 }

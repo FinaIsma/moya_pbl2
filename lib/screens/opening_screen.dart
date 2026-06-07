@@ -32,6 +32,11 @@ class _OpeningScreenState extends State<OpeningScreen>
   late Animation<Offset>  _btnSlide;
   late Animation<double> _illustrationFade;
   late Animation<Offset>  _illustrationSlide;
+  late AnimationController _floatingController;
+
+  late Animation<double> _brainFloat;
+  late Animation<double> _cloudLeftMove;
+  late Animation<double> _cloudRightMove;
 
   @override
   void initState() {
@@ -85,13 +90,48 @@ class _OpeningScreenState extends State<OpeningScreen>
       CurvedAnimation(parent: _illustrationController, curve: Curves.easeOut),
     );
     _illustrationSlide = Tween<Offset>(
-      begin: const Offset(0, 0.15),
+      begin: const Offset(0, 0.25),
       end: Offset.zero,
     ).animate(
       CurvedAnimation(
-          parent: _illustrationController, curve: Curves.easeOut),
+          parent: _illustrationController, curve: Curves.easeOutBack),
     );
-  }
+
+    _floatingController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 5),
+    )..repeat(reverse: true);
+
+    _brainFloat = Tween<double>(
+      begin: -8,
+      end: 8,
+    ).animate(
+      CurvedAnimation(
+        parent: _floatingController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    _cloudLeftMove = Tween<double>(
+      begin: -12,
+      end: 12,
+    ).animate(
+      CurvedAnimation(
+        parent: _floatingController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    _cloudRightMove = Tween<double>(
+      begin: 12,
+      end: -12,
+    ).animate(
+      CurvedAnimation(
+        parent: _floatingController,
+        curve: Curves.easeInOut,
+      ),
+    );
+      }
 
   Future<void> _startSequence() async {
     await Future.delayed(const Duration(milliseconds: 150));
@@ -113,6 +153,7 @@ class _OpeningScreenState extends State<OpeningScreen>
     _textController.dispose();
     _btnController.dispose();
     _illustrationController.dispose();
+    _floatingController.dispose();
     super.dispose();
   }
 
@@ -268,21 +309,53 @@ class _OpeningScreenState extends State<OpeningScreen>
               opacity: _illustrationFade,
               child: SlideTransition(
                 position: _illustrationSlide,
-                child: Image.asset(
-                  _illustration,
+                child: SizedBox(
                   width: size.width,
-                  fit: BoxFit.fitWidth,
-                  errorBuilder: (_, __, ___) => Container(
-                    width: size.width,
-                    height: size.width * 0.7,
-                    color: const Color(0xFFF5CBCB).withOpacity(0.3),
-                    child: const Icon(
-                      Icons.sentiment_very_satisfied,
-                      size: 80,
-                      color: Color(0xFF748DAE),
-                    ),
+                  height: size.width * 0.7,
+                  child: AnimatedBuilder(
+                    animation: _floatingController,
+                    builder: (_, __) {
+                      return Stack(
+                        alignment: Alignment.center,
+                        children: [
+
+                          // cloud kiri
+                          Transform.translate(
+                            offset: Offset(_cloudLeftMove.value, 0),
+                            child: Align(
+                              alignment: const Alignment(-0.8, -0.65),
+                              child: Image.asset(
+                                'assets/images/cloud1.png',
+                                width: 110,
+                              ),
+                            ),
+                          ),
+
+                          // cloud kanan
+                          Transform.translate(
+                            offset: Offset(_cloudRightMove.value, 0),
+                            child: Align(
+                              alignment: const Alignment(0.8, -0.15),
+                              child: Image.asset(
+                                'assets/images/cloud2.png',
+                                width: 110,
+                              ),
+                            ),
+                          ),
+
+                          // brain
+                          Transform.translate(
+                            offset: Offset(0, _brainFloat.value),
+                            child: Image.asset(
+                              'assets/images/icon2.png',
+                              width: size.width * 0.65,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
-                ),
+                )
               ),
             ),
 

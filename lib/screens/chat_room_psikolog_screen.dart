@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:intl/intl.dart';
 
 class ChatRoomPsikologScreen extends StatefulWidget {
   final String roomId;
@@ -67,8 +68,8 @@ class _ChatRoomPsikologScreenState extends State<ChatRoomPsikologScreen> {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
         );
       }
     });
@@ -132,6 +133,34 @@ class _ChatRoomPsikologScreenState extends State<ChatRoomPsikologScreen> {
     return '$h.$m';
   }
 
+  String _formatDateDivider(DateTime date) {
+  final now = DateTime.now();
+
+  final today = DateTime(
+    now.year,
+    now.month,
+    now.day,
+  );
+
+  final target = DateTime(
+    date.year,
+    date.month,
+    date.day,
+  );
+
+  final difference = today.difference(target).inDays;
+
+  if (difference == 0) {
+    return 'Hari Ini';
+  }
+
+  if (difference == 1) {
+    return 'Kemarin';
+  }
+
+  return DateFormat('d MMMM yyyy', 'id_ID').format(date);
+}
+
   Future<void> _sendText() async {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
@@ -177,7 +206,7 @@ class _ChatRoomPsikologScreenState extends State<ChatRoomPsikologScreen> {
 
     Widget content;
 
-    if (type == 'text') {
+if (type == 'text') {
       content = Text(
         data['content'] ?? '',
         style: GoogleFonts.poppins(
@@ -189,22 +218,44 @@ class _ChatRoomPsikologScreenState extends State<ChatRoomPsikologScreen> {
         onTap: () {
           final url = data['file_url'] as String?;
           if (url != null && url.isNotEmpty) {
-            final fileName = 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
+            final fileName =
+                'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
             _downloadAndOpenFile(url, fileName);
           }
         },
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: Image.network(
-            data['file_url'] ?? '',
-            width: 200,
-            fit: BoxFit.cover,
-            loadingBuilder: (_, child, progress) => progress == null
-                ? child
-                : const SizedBox(
-                    width: 200, height: 120,
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
+        child: Container(
+          constraints: const BoxConstraints(
+            maxWidth: 240
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.7),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: AspectRatio(
+              aspectRatio: 0.75,
+              child: Image.network(
+                data['file_url'] ?? '',
+                fit: BoxFit.cover,
+                loadingBuilder: (_, child, progress) {
+                  if (progress == null) return child;
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                },
+              ),
+            ),
           ),
         ),
       );
@@ -212,48 +263,124 @@ class _ChatRoomPsikologScreenState extends State<ChatRoomPsikologScreen> {
       content = GestureDetector(
         onTap: () {
           final url = data['file_url'] as String?;
-          final fileName = data['file_name'] ?? 'document.file'; // Ambil nama asli
+          final fileName =
+              data['file_name'] ?? 'document.file';
+
           if (url != null && url.isNotEmpty) {
             _downloadAndOpenFile(url, fileName);
           }
         },
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.insert_drive_file_outlined,
-              color: _secondary, size: 28,
+        child: Container(
+          width: 240,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.45),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.35),
             ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                data['file_name'] ?? 'Document',
-                style: GoogleFonts.poppins(
-                  fontSize: 13, color: _textMain,
-                  decoration: TextDecoration.underline,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: _secondary.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.description_rounded,
+                  color: _secondary,
+                  size: 26,
                 ),
               ),
-            ),
-          ],
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      data['file_name'] ?? 'Document',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _textMain,
+                      ),
+                    ),
+
+                    const SizedBox(height: 3),
+
+                    Text(
+                      'Tap untuk membuka',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: _textSub,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 8),
+
+              const Icon(
+                Icons.download_rounded,
+                color: _secondary,
+                size: 20,
+              ),
+            ],
+          ),
         ),
       );
     }
 
     return Align(
-      alignment: isSelf ? Alignment.centerRight : Alignment.centerLeft,
+      alignment: isSelf
+          ? Alignment.centerRight
+          : Alignment.centerLeft,
       child: Container(
         margin: EdgeInsets.only(
-          top: 6, bottom: 6,
-          left:  isSelf ? 60 : 0,
-          right: isSelf ? 0  : 60,
+          top: 4,
+          bottom: 4,
+          left: isSelf ? 70 : 0,
+          right: isSelf ? 0 : 70,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+
+        // <-- INI paddingnya
+        padding: type == 'text'
+            ? const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 10,
+              )
+            : const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: bubbleColor,
+          color: bubbleColor.withOpacity(0.85),
+
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+          border: Border.all(
+          color: Colors.white.withOpacity(
+            type == 'text' ? 0.35 : 0.7,
+          ),
+          width: 1,
+        ),
+
           borderRadius: BorderRadius.only(
-            topLeft:     const Radius.circular(18),
-            topRight:    const Radius.circular(18),
-            bottomLeft:  Radius.circular(isSelf ? 18 : 4),
-            bottomRight: Radius.circular(isSelf ? 4  : 18),
+            topLeft: const Radius.circular(20),
+            topRight: const Radius.circular(20),
+            bottomLeft: Radius.circular(isSelf ? 20 : 6),
+            bottomRight: Radius.circular(isSelf ? 6 : 20),
           ),
         ),
         child: Column(
@@ -261,7 +388,9 @@ class _ChatRoomPsikologScreenState extends State<ChatRoomPsikologScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             content,
-            const SizedBox(height: 4),
+            SizedBox(
+              height: type == 'text' ? 4 : 8,
+            ),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -336,40 +465,100 @@ class _ChatRoomPsikologScreenState extends State<ChatRoomPsikologScreen> {
 
             // ── Messages ─────────────────────────────────────
             Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: ChatService.streamMessages(widget.roomId),
-                builder: (context, snap) {
-                  if (!snap.hasData) {
-                    return const Center(
-                      child: CircularProgressIndicator(color: _primary),
-                    );
-                  }
+            child: Container(
+                decoration: const BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage(
+                      'assets/images/bg_chat.png',
+                    ),
+                    fit: BoxFit.cover,
+                    opacity: 0.09,
+                  ),
+                ),
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: ChatService.streamMessages(widget.roomId),
+                  builder: (context, snap) {
+                    if (!snap.hasData) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: _primary,
+                        ),
+                      );
+                    }
 
                   final docs = snap.data!.docs;
-                  if (docs.isEmpty) {
-                    return Center(
-                      child: Text('Belum ada pesan.',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14, color: _textSub,
+                    if (docs.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'Mulai percakapan!',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: _textSub,
+                          ),
                         ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      controller: _scrollController,
+                      physics: const BouncingScrollPhysics(),
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      padding: const EdgeInsets.fromLTRB(
+                        16,
+                        16,
+                        16,
+                        20,
                       ),
+                      itemCount: docs.length,
+                      itemBuilder: (_, i) {
+                        final data =
+                            docs[i].data() as Map<String, dynamic>;
+
+                        final currentTs =
+                            data['created_at'] as Timestamp?;
+
+                        bool showDateDivider = false;
+
+                        if (currentTs != null) {
+                          final currentDate = currentTs.toDate();
+
+                          if (i == 0) {
+                            showDateDivider = true;
+                          } else {
+                            final prevData =
+                                docs[i - 1].data()
+                                    as Map<String, dynamic>;
+
+                            final prevTs =
+                                prevData['created_at']
+                                    as Timestamp?;
+
+                            if (prevTs != null) {
+                              final prevDate = prevTs.toDate();
+
+                              showDateDivider =
+                                  currentDate.day != prevDate.day ||
+                                  currentDate.month != prevDate.month ||
+                                  currentDate.year != prevDate.year;
+                            }
+                          }
+                        }
+
+                        return Column(
+                          children: [
+                            if (showDateDivider &&
+                                currentTs != null)
+                              _buildDateDivider(
+                                currentTs.toDate(),
+                              ),
+                            _buildBubble(data),
+                          ],
+                        );
+                      },
                     );
-                  }
-
-                  _scrollToBottom();
-
-                  return ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 12,
-                    ),
-                    itemCount: docs.length,
-                    itemBuilder: (_, i) {
-                      final data = docs[i].data() as Map<String, dynamic>;
-                      return _buildBubble(data);
-                    },
-                  );
-                },
+                  },
+                ),
               ),
             ),
 
@@ -495,4 +684,67 @@ class _ChatRoomPsikologScreenState extends State<ChatRoomPsikologScreen> {
       ),
     );
   }
+
+    Widget _buildDateDivider(DateTime date) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(
+      vertical: 16,
+    ),
+    child: Row(
+      children: [
+        const Expanded(
+          child: Divider(
+            color: Color(0xFFE4ECF0),
+            thickness: 1,
+          ),
+        ),
+
+        Container(
+          margin: const EdgeInsets.symmetric(
+            horizontal: 12,
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 6,
+          ),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEAF4F7),
+
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(
+                  alpha: 0.03,
+                ),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+
+            borderRadius:
+                BorderRadius.circular(20),
+
+            border: Border.all(
+              color: const Color(0xFFD8E7ED),
+            ),
+          ),
+          child: Text(
+            _formatDateDivider(date),
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: _textSub,
+            ),
+          ),
+        ),
+
+        const Expanded(
+          child: Divider(
+            color: Color(0xFFE4ECF0),
+            thickness: 1,
+          ),
+        ),
+      ],
+    ),
+  );
+}
 }
