@@ -40,6 +40,11 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _loadingController;
   late Animation<double> _loadingProgress;
 
+  late AnimationController _floatingController;
+  late Animation<double> _floatingAnimation;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
   @override
   void initState() {
     super.initState();
@@ -97,6 +102,36 @@ class _SplashScreenState extends State<SplashScreen>
     _loadingProgress = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _loadingController, curve: Curves.easeInOut),
     );
+
+    _floatingController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat(reverse: true);
+
+    _floatingAnimation = Tween<double>(
+      begin: -8,
+      end: 8,
+    ).animate(
+      CurvedAnimation(
+        parent: _floatingController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+
+    _pulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.05,
+    ).animate(
+      CurvedAnimation(
+        parent: _pulseController,
+        curve: Curves.easeInOut,
+      ),
+    );
   }
 
   Future<void> _startSequence() async {
@@ -104,6 +139,10 @@ class _SplashScreenState extends State<SplashScreen>
 
     // Logo & loading bar mulai bersamaan
     _logoController.forward();
+    _logoController.forward().then((_) {
+    _pulseController.repeat(reverse: true);
+  });
+  
     _loadingController.forward();
 
     await Future.delayed(const Duration(milliseconds: 400));
@@ -204,6 +243,7 @@ class _SplashScreenState extends State<SplashScreen>
     _iconsController.dispose();
     _subtitleController.dispose();
     _loadingController.dispose();
+    _floatingController.dispose();
     super.dispose();
   }
 
@@ -228,25 +268,30 @@ class _SplashScreenState extends State<SplashScreen>
                   scale: _logoScale,
                   child: Column(
                     children: [
-                      Image.asset(
-                        _icon1Path,
-                        width: 56,
-                        height: 56,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => Container(
+
+                      ScaleTransition(
+                        scale: _pulseAnimation,
+                        child: Image.asset(
+                          _icon1Path,
                           width: 56,
                           height: 56,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF5CBCB),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Icon(
-                            Icons.sentiment_satisfied_alt,
-                            color: Color(0xFF748DAE),
-                            size: 32,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF5CBCB),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Icon(
+                              Icons.sentiment_satisfied_alt,
+                              color: Color(0xFF748DAE),
+                              size: 32,
+                            ),
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 12),
 
                       // Animated Loading Bar
@@ -267,15 +312,38 @@ class _SplashScreenState extends State<SplashScreen>
                                     color: const Color(0xFFE4ECF0),
                                   ),
                                   // Fill
-                                  Container(
-                                    width: 40 * _loadingProgress.value,
-                                    height: 4,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(8),
-                                      gradient: const LinearGradient(
-                                        colors: [
-                                          Color(0xFF9ECAD6),
-                                          Color(0xFF748DAE),
+                                  Positioned(
+                                    child: Container(
+                                      width: 40 * _loadingProgress.value,
+                                      height: 4,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(8),
+                                        gradient: const LinearGradient(
+                                          colors: [
+                                            Color(0xFF9ECAD6),
+                                            Color(0xFF748DAE),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  // Glow Dot
+                                  Positioned(
+                                    left: (40 * _loadingProgress.value) - 4,
+                                    top: -2,
+                                    child: Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFF9ECAD6).withOpacity(0.8),
+                                            blurRadius: 8,
+                                            spreadRadius: 2,
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -323,9 +391,18 @@ class _SplashScreenState extends State<SplashScreen>
                   width: size.width,
                   height: size.width * 0.82,
                   child: Center(
-                    child: Image.asset(
-                      _iconsCombinedPath,
-                      fit: BoxFit.contain,
+                    child: AnimatedBuilder(
+                      animation: _floatingAnimation,
+                      builder: (_, child) {
+                        return Transform.translate(
+                          offset: Offset(0, _floatingAnimation.value),
+                          child: child,
+                        );
+                      },
+                      child: Image.asset(
+                        _iconsCombinedPath,
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
                 ),

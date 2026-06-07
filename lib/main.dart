@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'services/notification_service.dart';
 import 'firebase_options.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'screens/splash_screen.dart';
 import 'screens/opening_screen.dart';
 import 'screens/login_screen.dart';
@@ -15,6 +17,9 @@ import 'screens/create_post_screen.dart';
 import 'screens/psychologist_dashboard.dart';
 import 'screens/analytics_screen.dart';
 import 'screens/psychologist_list_page.dart';
+import 'services/fcm_service.dart';
+import 'package:moya_pbl2/services/nav_key.dart'; // tambah ini
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +28,10 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  await initializeDateFormatting('id_ID', null);
+  await NotificationService.init();
+  await FCMService.init();
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -42,6 +51,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'Moya',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
