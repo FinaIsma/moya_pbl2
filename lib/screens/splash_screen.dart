@@ -33,6 +33,13 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _logoScale;
   late Animation<double> _textFade;
   late Animation<Offset> _textSlide;
+  late Animation<double> _feelFade;
+  late Animation<double> _reflectFade;
+  late Animation<double> _understandFade;
+
+  late Animation<Offset> _feelSlide;
+  late Animation<Offset> _reflectSlide;
+  late Animation<Offset> _understandSlide;
   late Animation<double> _iconsFade;
   late Animation<double> _subtitleFade;
 
@@ -64,19 +71,55 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _logoController, curve: Curves.elasticOut),
     );
 
-    _textController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-    _textFade = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _textController, curve: Curves.easeOut),
-    );
-    _textSlide = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _textController, curve: Curves.easeOut),
-    );
+_textController = AnimationController(
+  vsync: this,
+  duration: const Duration(milliseconds: 1200),
+);
+
+_feelFade = CurvedAnimation(
+  parent: _textController,
+  curve: const Interval(0.0, 0.4, curve: Curves.easeOut),
+);
+
+_reflectFade = CurvedAnimation(
+  parent: _textController,
+  curve: const Interval(0.3, 0.7, curve: Curves.easeOut),
+);
+
+_understandFade = CurvedAnimation(
+  parent: _textController,
+  curve: const Interval(0.6, 1.0, curve: Curves.easeOut),
+);
+
+_feelSlide = Tween<Offset>(
+  begin: const Offset(0, 0.3),
+  end: Offset.zero,
+).animate(
+  CurvedAnimation(
+    parent: _textController,
+    curve: const Interval(0.0, 0.4, curve: Curves.easeOutBack),
+  ),
+);
+
+_reflectSlide = Tween<Offset>(
+  begin: const Offset(0, 0.3),
+  end: Offset.zero,
+).animate(
+  CurvedAnimation(
+    parent: _textController,
+    curve: const Interval(0.3, 0.7, curve: Curves.easeOutBack),
+  ),
+);
+
+_understandSlide = Tween<Offset>(
+  begin: const Offset(0, 0.3),
+  end: Offset.zero,
+).animate(
+  CurvedAnimation(
+    parent: _textController,
+    curve: const Interval(0.6, 1.0, curve: Curves.easeOutBack),
+  ),
+);
 
     _iconsController = AnimationController(
       vsync: this,
@@ -362,25 +405,62 @@ class _SplashScreenState extends State<SplashScreen>
               const SizedBox(height: 40),
 
               // ── Headline ────────────────────────────────────
-              FadeTransition(
-                opacity: _textFade,
-                child: SlideTransition(
-                  position: _textSlide,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 40),
-                    child: Text(
-                      'Feel, Reflect,\nUnderstand',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1A1A2E),
-                        height: 1.25,
+              Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Column(
+                children: [
+
+                  FadeTransition(
+                    opacity: _feelFade,
+                    child: SlideTransition(
+                      position: _feelSlide,
+                      child: Text(
+                        'Feel,',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1A1A2E),
+                        ),
                       ),
                     ),
                   ),
-                ),
+
+                  FadeTransition(
+                    opacity: _reflectFade,
+                    child: SlideTransition(
+                      position: _reflectSlide,
+                      child: Text(
+                        'Reflect,',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1A1A2E),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  FadeTransition(
+                    opacity: _understandFade,
+                    child: SlideTransition(
+                      position: _understandSlide,
+                      child: Text(
+                        'Understand',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1A1A2E),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                ],
               ),
+            ),
 
               const SizedBox(height: 36),
 
