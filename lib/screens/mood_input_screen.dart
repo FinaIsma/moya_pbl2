@@ -4,10 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:typed_data';
-import 'dart:io'; // Tambahkan ini biar 'File' nggak merah
-import 'dart:convert'; // Tambahkan ini
-import 'package:http/http.dart' as http; // Tambahkan ini
-import 'package:http_parser/http_parser.dart'; // Tambahkan ini
+import 'dart:io'; 
+import 'dart:convert'; 
+import 'package:http/http.dart' as http; 
+import 'package:http_parser/http_parser.dart'; 
 
 class MoodInputScreen extends StatefulWidget {
   const MoodInputScreen({super.key});
@@ -56,7 +56,6 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
     super.dispose();
   }
 
-  // --- LOGIKA REKOMENDASI AKTIVITAS ---
   List<String> getRecommendations(String emotion) {
     switch (emotion) {
       case "Happy":
@@ -75,111 +74,136 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
     }
   }
 
-  Future<void> _pickImage() async {
-  final XFile? pickedFile = await _picker.pickImage(
-    source: ImageSource.gallery, 
-    imageQuality: 50, 
-  );
   
-  if (pickedFile != null) {
-    // LANGSUNG masukkan pickedFile, jangan dibungkus io.File(...)
-    setState(() => _selectedImage = pickedFile); 
-  }
-}
-
-  Future<void> saveMood() async {
-  final String? userId = FirebaseAuth.instance.currentUser?.uid;
-
-  // 1. Validasi Input
-  if (selectedMood == -1 || selectedEmotion == -1) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Please select mood and emotion first")),
-    );
-    return;
-  }
-
-  if (journalController.text.trim().isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Please write a little bit about your day")),
-    );
-    return;
-  }
-
-  // 2. Munculkan Loading
-  showDialog(
+  Future<void> _pickImage() async {
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()));
-
-  String? imageUrl;
-  String emotionLabel = emotions[selectedEmotion]['label'];
-  List<String> recommendations = getRecommendations(emotionLabel);
-
-  try {
-    // 3. Upload Foto ke Cloudinary (GANTINYA FIREBASE STORAGE)
-    if (_selectedImage != null) {
-      // Kita bungkus path-nya ke dalam File()
-      imageUrl = await uploadToCloudinary(File(_selectedImage!.path));
-    }
-
-    // 4. Simpan ke Firestore
-    await FirebaseFirestore.instance.collection('moods').add({
-      'userId': userId,
-      'date': selectedDate.toIso8601String(),
-      'mood': selectedMood,
-      'emotion': emotionLabel,
-      'journal': journalController.text,
-      'recommendations': recommendations,
-      'photoUrl': imageUrl, // Link dari Cloudinary masuk ke sini
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-
-    if (mounted) {
-      Navigator.pop(context); // Tutup loading
-
-      // 5. Pop Up Sukses
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Wrap(
             children: [
-              Image.asset(emotions[selectedEmotion]['icon'], width: 30),
-              const SizedBox(width: 10),
-              Expanded(child: Text("Saved! Since you're $emotionLabel...")),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Pilih dari Galeri'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _getImage(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Ambil dari Kamera'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _getImage(ImageSource.camera);
+                },
+              ),
             ],
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: recommendations
-                .map((r) => ListTile(
-                      leading: const Icon(Icons.auto_awesome, color: Colors.amber),
-                      title: Text(r, style: const TextStyle(fontSize: 14)),
-                      contentPadding: EdgeInsets.zero,
-                    ))
-                .toList(),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); 
-                resetForm(); 
-                Navigator.pushReplacementNamed(context, '/dashboard');
-              },
-              child: const Text("Got it!", style: TextStyle(fontWeight: FontWeight.bold)),
-            )
-          ],
-        ),
-      );
-    }
-  } catch (e) {
-    if (mounted) Navigator.pop(context);
-    print("Error Detail: $e");
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+        );
+      },
+    );
   }
-}
 
-  // --- FUNGSI RESET FORM ---
+  Future<void> _getImage(ImageSource source) async {
+    final XFile? pickedFile = await _picker.pickImage(
+      source: source,
+      imageQuality: 50,
+    );
+    if (pickedFile != null) {
+      setState(() => _selectedImage = pickedFile);
+    }
+  }
+
+  Future<void> saveMood() async {
+    final String? userId = FirebaseAuth.instance.currentUser?.uid;
+
+    if (selectedMood == -1 || selectedEmotion == -1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select mood and emotion first")),
+      );
+      return;
+    }
+
+    if (journalController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please write a little bit about your day")),
+      );
+      return;
+    }
+
+    showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()));
+
+    String? imageUrl;
+    String emotionLabel = emotions[selectedEmotion]['label'];
+    List<String> recommendations = getRecommendations(emotionLabel);
+
+    try {
+      if (_selectedImage != null) {
+        imageUrl = await uploadToCloudinary(File(_selectedImage!.path));
+      }
+
+      await FirebaseFirestore.instance.collection('moods').add({
+        'userId': userId,
+        'date': selectedDate.toIso8601String(),
+        'mood': selectedMood,
+        'emotion': emotionLabel,
+        'journal': journalController.text,
+        'recommendations': recommendations,
+        'photoUrl': imageUrl, 
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      if (mounted) {
+        Navigator.pop(context); 
+
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                Image.asset(emotions[selectedEmotion]['icon'], width: 30),
+                const SizedBox(width: 10),
+                Expanded(child: Text("Saved! Since you're $emotionLabel...")),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: recommendations
+                  .map((r) => ListTile(
+                        leading: const Icon(Icons.auto_awesome, color: Colors.amber),
+                        title: Text(r, style: const TextStyle(fontSize: 14)),
+                        contentPadding: EdgeInsets.zero,
+                      ))
+                  .toList(),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); 
+                  resetForm(); 
+                  Navigator.pushReplacementNamed(context, '/dashboard');
+                },
+                child: const Text("Got it!", style: TextStyle(fontWeight: FontWeight.bold)),
+              )
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+      print("Error Detail: $e");
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+    }
+  }
+
   void resetForm() {
     setState(() {
       selectedMood = -1;
@@ -218,15 +242,18 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bgColor,
+      bottomNavigationBar: null, 
       body: SafeArea(
-        child: Column(
+        bottom: false,
+        child: Stack(
           children: [
-            Expanded(
+            // 1. AREA KONTEN UTAMA (BISA DI-SCROLL)
+            Positioned.fill(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                 child: Column(
                   children: [
-                    // HEADER 
+                    // HEADER + TOMBOL BACK 
                     Row(
                       children: [
                         GestureDetector(
@@ -263,22 +290,35 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
                     // HOW WAS YOUR DAY 
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                       decoration: BoxDecoration(color: textBlue, borderRadius: BorderRadius.circular(24)),
                       child: Column(
                         children: [
                           const Text("How was your day?", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
                           const SizedBox(height: 15),
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.center, 
                             children: List.generate(moods.length, (index) {
-                              return GestureDetector(
-                                onTap: () => setState(() => selectedMood = index),
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(color: selectedMood == index ? Colors.white : Colors.transparent, shape: BoxShape.circle),
-                                  child: Image.asset(moods[index], width: 32, height: 32),
-                                ),
+                              return Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () => setState(() => selectedMood = index),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: selectedMood == index ? Colors.white : Colors.transparent, 
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Image.asset(
+                                        moods[index], 
+                                        width: 52, 
+                                        height: 52, 
+                                      ),
+                                    ),
+                                  ),
+                                  if (index < moods.length - 1) const SizedBox(width: 10), 
+                                ],
                               );
                             }),
                           ),
@@ -304,9 +344,9 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
                             itemCount: emotions.length,
                             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 4,
-                              mainAxisSpacing: 12,
+                              mainAxisSpacing: 8,
                               crossAxisSpacing: 12,
-                              childAspectRatio: 0.85,
+                              childAspectRatio: 1.1,
                             ),
                             itemBuilder: (context, index) {
                               final item = emotions[index];
@@ -328,7 +368,7 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
                                   ],
                                 ),
                               );
-                            },
+                            }, 
                           ),
                         ],
                       ),
@@ -339,26 +379,32 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
                     // TODAY'S JOURNAL 
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(14),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: textBlue.withOpacity(0.35)),
+                        border: Border.all(
+                          color: textBlue, 
+                          width: 2.0,      
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text("Today's journal", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: textBlue.withOpacity(0.2)),
+                              border: Border.all(
+                                color: textBlue, 
+                                width: 1.5,      
+                              ),
                             ),
                             child: TextField(
                               controller: journalController,
-                              maxLines: 4,
+                              maxLines: 2,
                               style: const TextStyle(fontSize: 12),
                               decoration: InputDecoration(
                                 hintText: "Write here...",
@@ -376,11 +422,14 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
                     // TODAY'S PHOTO 
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(14),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: textBlue.withOpacity(0.35)),
+                        border: Border.all(
+                          color: textBlue, 
+                          width: 2.0,      
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -395,20 +444,21 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
                               decoration: BoxDecoration(
                                 color: bgColor,
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: textBlue.withOpacity(0.25)),
+                                border: Border.all(
+                                  color: textBlue, 
+                                  width: 1.5,      
+                                ),
                               ),
                               child: _selectedImage != null
                               ? ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
                                   child: FutureBuilder<Uint8List>(
-                                    // Membaca data gambar secara asinkron (aman untuk Web & HP)
                                     future: _selectedImage!.readAsBytes(),
                                     builder: (context, snapshot) {
                                       if (snapshot.connectionState == ConnectionState.waiting) {
                                         return const Center(child: CircularProgressIndicator());
                                       }
                                       if (snapshot.hasData) {
-                                        // Menampilkan gambar dari memori (bytes)
                                         return Image.memory(
                                           snapshot.data!, 
                                           fit: BoxFit.cover, 
@@ -426,33 +476,42 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
+
+                    const SizedBox(height: 140), 
                   ],
                 ),
               ),
             ),
 
-            // DONE BUTTON
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 25, 20, 35), 
-              decoration: BoxDecoration(
-                color: cardBlue,
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
-              ),
-              child: ElevatedButton(
-                onPressed: saveMood,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: buttonGreen,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 18), 
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25), 
-                    side: const BorderSide(color: Colors.white, width: 2.0),
+            
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 34), 
+                decoration: BoxDecoration(
+                  color: cardBlue, 
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(30), 
+                    topRight: Radius.circular(30),
                   ),
                 ),
-                child: const Text("Done", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                child: ElevatedButton(
+                  onPressed: saveMood,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: buttonGreen,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 16), 
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25), 
+                      side: const BorderSide(color: Colors.white, width: 2.0),
+                    ),
+                  ),
+                  child: const Text("Done", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ),
               ),
             ),
           ],
@@ -462,7 +521,6 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
   }
 }
 
-// TARUH DI PALING BAWAH FILE (DI LUAR CLASS)
 Future<String?> uploadToCloudinary(File imageFile) async {
   String cloudName = "drkxaqn7z"; 
   String uploadPreset = "mooya_preset";
