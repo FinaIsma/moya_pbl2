@@ -1,5 +1,10 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:moya_pbl2/services/nav_key.dart';
+import 'package:moya_pbl2/screens/chat_room_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
 class NotificationService {
   static final _localNotif = FlutterLocalNotificationsPlugin();
@@ -66,9 +71,47 @@ class NotificationService {
     );
   }
 
-  static void handleNotifTap(String? payload) {
+  static Future<void> handleNotifTap(String? payload) async {
     if (payload == null) return;
-    // Navigasi ke chat room berdasarkan payload (chatRoomId)
-    // Contoh: NavigationService.navigateTo('/chat', arguments: payload);
+    final roomId = payload;
+
+    // Ambil data room
+    final roomDoc = await FirebaseFirestore.instance
+        .collection('chat_rooms')
+        .doc(roomId)
+        .get();
+
+    if (!roomDoc.exists) return;
+
+    final roomData = roomDoc.data()!;
+    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final psikologUid = roomData['psikolog_uid'] as String? ?? '';
+
+    // Fetch data psikolog untuk header AppBar
+    String psikologName = '';
+    String psikologPhotoUrl = '';
+
+    final psychQuery = await FirebaseFirestore.instance
+        .collection('psychologists')
+        .where('uid', isEqualTo: psikologUid)
+        .limit(1)
+        .get();
+
+    if (psychQuery.docs.isNotEmpty) {
+      final d = psychQuery.docs.first.data();
+      psikologName = d['name'] ?? '';
+      psikologPhotoUrl = d['photo_url'] ?? '';
+    }
+
+    navigatorKey.currentState?.push(
+      MaterialPageRoute(
+        builder: (_) => ChatRoomScreen(
+          roomId: roomId,
+          psikologUid: psikologUid,
+          psikologName: psikologName,
+          psikologPhotoUrl: psikologPhotoUrl,
+        ),
+      ),
+    );
   }
 }
