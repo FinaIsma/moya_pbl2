@@ -64,7 +64,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Column(
           children: [
@@ -102,39 +102,110 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             const SizedBox(height: 16),
 
             // ── Text Area ────────────────────────────────────
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE4ECF0)),
-                  ),
-                  child: TextField(
-                    controller: _controller,
-                    maxLines: null,
-                    expands: true,
-                    textAlignVertical: TextAlignVertical.top,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14, color: _textMain, height: 1.6,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Ceritakan apa yang kamu rasakan...',
-                      hintStyle: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: const Color(0xFFABB8C3),
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.all(16),
-                    ),
-                  ),
-                ),
+Expanded(
+  child: Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+
+        Row(
+          children: [
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: _primary.withOpacity(0.25),
+              child: const Icon(
+                Icons.person_outline_rounded,
+                color: Color(0xFF5A6A7E),
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(width: 12),
 
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Posting secara anonim",
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    color: _textMain,
+                  ),
+                ),
+
+                Text(
+                  "Nama kamu tidak akan terlihat",
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 18),
+
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: _controller,
+              maxLines: null,
+              expands: true,
+              textAlignVertical: TextAlignVertical.top,
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                height: 1.7,
+                color: _textMain,
+              ),
+              decoration: InputDecoration(
+                hintText:
+                    "Apa yang sedang kamu rasakan hari ini?\n\nKamu bisa berbagi cerita di sini...",
+                hintStyle: GoogleFonts.poppins(
+                  color: Colors.grey.shade400,
+                  height: 1.6,
+                ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.all(22),
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        Align(
+          alignment: Alignment.centerRight,
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (_, __) {
+              return Text(
+                "${_controller.text.length}/500",
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  color: Colors.grey,
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    ),
+  ),
+),
             // ── Posting Button ───────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -145,15 +216,18 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _submitPost,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _primary,
-                      foregroundColor: const Color(0xFF1A4A54),
-                      disabledBackgroundColor: _primary.withOpacity(0.6),
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                      ),
+                    backgroundColor: _primary,
+                    foregroundColor: const Color(0xFF1A4A54),
+                    elevation: 4,
+                    shadowColor: _primary.withOpacity(0.3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 36,
+                      vertical: 14,
                     ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
                     child: _isLoading
                         ? const SizedBox(
                             width: 20, height: 20,
