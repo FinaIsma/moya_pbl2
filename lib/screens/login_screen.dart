@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // untuk ambil role user
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -21,6 +22,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   bool _isLoading       = false;
   bool _obscurePassword = true;
+  bool _rememberMe = false;
   String? _errorMessage;
 
   // ─── Fade-in animation ──────────────────────────────────────
@@ -39,6 +41,7 @@ class _LoginScreenState extends State<LoginScreen>
       curve: Curves.easeOut,
     );
     _fadeController.forward();
+    loadSavedCredentials();
   }
 
   @override
@@ -91,6 +94,7 @@ class _LoginScreenState extends State<LoginScreen>
 
       if (userDoc.exists) {
         await _saveFcmToken(user.uid, 'users');
+        await _saveCredentials();
         Navigator.pushReplacementNamed(context, '/dashboard');
         return;
       }
@@ -124,7 +128,7 @@ class _LoginScreenState extends State<LoginScreen>
             'fcm_token': token,
           }, SetOptions(merge: true));
         }
-
+        await _saveCredentials();
         Navigator.pushReplacementNamed(
             context,
             '/psychologist-dashboard');
@@ -404,7 +408,26 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
 
                         const SizedBox(height: 20),
-
+                        // Remember Me
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _rememberMe,
+                              onChanged: (val) => setState(() => _rememberMe = val ?? false),
+                              activeColor: const Color(0xFF9ECAD6),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                            Text(
+                              'Remember Me',
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                color: const Color(0xFF748DAE),
+                              ),
+                            ),
+                          ],
+                        ),
                         // Error message
                         if (_errorMessage != null) ...[
                           Container(
@@ -523,4 +546,32 @@ class _LoginScreenState extends State<LoginScreen>
       ),
     );
   }
+Future<void> _loadSavedCredentials() async {
+  final prefs = await SharedPreferences.getInstance();
+  final savedEmail    = prefs.getString('saved_email') ?? '';
+  final savedPassword = prefs.getString('saved_password') ?? '';
+  final rememberMe    = prefs.getBool('remember_me') ?? false;
+
+  if (rememberMe) {
+    setState(() {
+      _emailController.text    = savedEmail;
+      _passwordController.text = savedPassword;
+      _rememberMe              = true;
+    });
+  }
+}
+
+Future<void> _saveCredentials() async {
+  final prefs = await SharedPreferences.getInstance();
+  if (_rememberMe) {
+    await prefs.setString('saved_email',    _emailController.text.trim());
+    await prefs.setString('saved_password', _passwordController.text.trim());
+    await prefs.setBool('remember_me', true);
+  } else {
+    await prefs.remove('saved_email');
+    await prefs.remove('saved_password');
+    await prefs.setBool('remember_me', false);
+  }
+}
+
 }
