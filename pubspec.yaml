@@ -19,6 +19,7 @@ dependencies:
   intl: ^0.20.2
   image_picker: ^1.0.7
   file_picker: ^8.0.0
+  dart_jsonwebtoken: ^2.8.0
   firebase_storage: ^12.4.10
   cloudflare_r2: ^0.0.14
   http: ^1.6.0
@@ -44,6 +45,8 @@ flutter:
   assets:
     - assets/images/icon1.png
     - assets/images/icon2.png
+    - assets/images/cloud1.png
+    - assets/images/cloud2.png
     - assets/images/icons.png
     - assets/images/icons1.png
     - assets/images/emot1.png
