@@ -87,7 +87,7 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.photo_library),
-                title: const Text('Pilih dari Galeri'),
+                title: const Text('Choose from Gallery'),
                 onTap: () {
                   Navigator.pop(context);
                   _getImage(ImageSource.gallery);
@@ -95,7 +95,7 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.camera_alt),
-                title: const Text('Ambil dari Kamera'),
+                title: const Text('Take a Photo'),
                 onTap: () {
                   Navigator.pop(context);
                   _getImage(ImageSource.camera);
@@ -215,11 +215,12 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
   }
 
   Future<void> pickDate() async {
+    final DateTime today = DateTime.now();
     DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: selectedDate,
+      initialDate: selectedDate.isAfter(today) ? today : selectedDate,
       firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
+      lastDate: today,
     );
     if (picked != null) setState(() => selectedDate = picked);
   }
