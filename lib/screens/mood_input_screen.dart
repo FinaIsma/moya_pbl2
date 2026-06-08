@@ -87,7 +87,7 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.photo_library),
-                title: const Text('Pilih dari Galeri'),
+                title: const Text('Choose from Gallery'),
                 onTap: () {
                   Navigator.pop(context);
                   _getImage(ImageSource.gallery);
@@ -95,7 +95,7 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.camera_alt),
-                title: const Text('Ambil dari Kamera'),
+                title: const Text('Take a Photo'),
                 onTap: () {
                   Navigator.pop(context);
                   _getImage(ImageSource.camera);
@@ -215,11 +215,12 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
   }
 
   Future<void> pickDate() async {
+    final DateTime today = DateTime.now();
     DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: selectedDate,
+      initialDate: selectedDate.isAfter(today) ? today : selectedDate,
       firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
+      lastDate: today,
     );
     if (picked != null) setState(() => selectedDate = picked);
   }
@@ -269,11 +270,13 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
                           child: GestureDetector(
                             onTap: pickDate,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
                               decoration: BoxDecoration(color: cardBlue, borderRadius: BorderRadius.circular(20)),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
+                                  const Icon(Icons.calendar_today_rounded, size: 15, color: Colors.black87),
+                                  const SizedBox(width: 8),
                                   Text(formatDate(selectedDate), style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
                                   const SizedBox(width: 4),
                                   const Icon(Icons.keyboard_arrow_down, size: 18, color: Colors.black87),
@@ -290,35 +293,45 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
                     // HOW WAS YOUR DAY 
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                      decoration: BoxDecoration(color: textBlue, borderRadius: BorderRadius.circular(24)),
+                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                      decoration: BoxDecoration(color: cardBlue.withOpacity(0.85), borderRadius: BorderRadius.circular(24)),
                       child: Column(
                         children: [
                           const Text("How was your day?", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
                           const SizedBox(height: 15),
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.center, 
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: List.generate(moods.length, (index) {
-                              return Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  GestureDetector(
-                                    onTap: () => setState(() => selectedMood = index),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(4),
+                              final bool isMoodSelected = selectedMood == index;
+                              final List<String> moodLabels = ["Great", "Happy", "Neutral", "Sad", "Terrible"];
+                              return GestureDetector(
+                                onTap: () => setState(() => selectedMood = index),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      padding: const EdgeInsets.all(5),
                                       decoration: BoxDecoration(
-                                        color: selectedMood == index ? Colors.white : Colors.transparent, 
+                                        color: isMoodSelected ? Colors.white : Colors.white.withOpacity(0.15),
                                         shape: BoxShape.circle,
+                                        boxShadow: isMoodSelected
+                                            ? [BoxShadow(color: Colors.black.withOpacity(0.18), blurRadius: 8, offset: const Offset(0, 3))]
+                                            : [],
                                       ),
-                                      child: Image.asset(
-                                        moods[index], 
-                                        width: 52, 
-                                        height: 52, 
+                                      child: Image.asset(moods[index], width: 48, height: 48),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      moodLabels[index],
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: isMoodSelected ? Colors.white : Colors.white.withOpacity(0.65),
+                                        fontWeight: isMoodSelected ? FontWeight.bold : FontWeight.normal,
                                       ),
                                     ),
-                                  ),
-                                  if (index < moods.length - 1) const SizedBox(width: 10), 
-                                ],
+                                  ],
+                                ),
                               );
                             }),
                           ),
@@ -331,8 +344,8 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
                     // EMOTIONS
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(color: textBlue, borderRadius: BorderRadius.circular(24)),
+                      padding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
+                      decoration: BoxDecoration(color: cardBlue.withOpacity(0.85), borderRadius: BorderRadius.circular(24)),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -344,28 +357,48 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
                             itemCount: emotions.length,
                             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 4,
-                              mainAxisSpacing: 8,
-                              crossAxisSpacing: 12,
-                              childAspectRatio: 1.1,
+                              mainAxisSpacing: 10,
+                              crossAxisSpacing: 10,
+                              childAspectRatio: 1.25,
                             ),
                             itemBuilder: (context, index) {
                               final item = emotions[index];
                               final bool isSelected = selectedEmotion == index;
                               return GestureDetector(
                                 onTap: () => setState(() => selectedEmotion = index),
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(10),
-                                      decoration: BoxDecoration(
-                                        color: isSelected ? Colors.white : Colors.white.withOpacity(0.7),
-                                        shape: BoxShape.circle,
+                                child: AnimatedScale(
+                                  scale: isSelected ? 1.12 : 1.0,
+                                  duration: const Duration(milliseconds: 200),
+                                  curve: Curves.easeOut,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      AnimatedContainer(
+                                        duration: const Duration(milliseconds: 200),
+                                        padding: const EdgeInsets.all(9),
+                                        decoration: BoxDecoration(
+                                          color: isSelected ? Colors.white : Colors.white.withOpacity(0.35),
+                                          shape: BoxShape.circle,
+                                          border: isSelected
+                                              ? Border.all(color: cardBlue, width: 2)
+                                              : null,
+                                          boxShadow: isSelected
+                                              ? [BoxShadow(color: Colors.black.withOpacity(0.18), blurRadius: 8, offset: const Offset(0, 3))]
+                                              : [],
+                                        ),
+                                        child: Image.asset(item["icon"], width: 24, height: 24),
                                       ),
-                                      child: Image.asset(item["icon"], width: 24, height: 24),
-                                    ),
-                                    const SizedBox(height: 5),
-                                    Text(item["label"], style: const TextStyle(fontSize: 11, color: Colors.white)),
-                                  ],
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        item["label"],
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: isSelected ? Colors.white : Colors.white.withOpacity(0.55),
+                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               );
                             }, 
@@ -384,30 +417,36 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(18),
                         border: Border.all(
-                          color: textBlue, 
+                          color: cardBlue, 
                           width: 2.0,      
                         ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("Today's journal", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                          Row(
+                            children: [
+                              const Text("📝", style: TextStyle(fontSize: 14)),
+                              const SizedBox(width: 6),
+                              const Text("Today's journal", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                            ],
+                          ),
                           const SizedBox(height: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: textBlue, 
+                                color: cardBlue, 
                                 width: 1.5,      
                               ),
                             ),
                             child: TextField(
                               controller: journalController,
-                              maxLines: 2,
+                              maxLines: 3,
                               style: const TextStyle(fontSize: 12),
                               decoration: InputDecoration(
-                                hintText: "Write here...",
+                                hintText: "What made you feel this way today?",
                                 hintStyle: TextStyle(color: textBlue.withOpacity(0.4), fontSize: 12),
                                 border: InputBorder.none, 
                               ),
@@ -427,7 +466,7 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(18),
                         border: Border.all(
-                          color: textBlue, 
+                          color: cardBlue, 
                           width: 2.0,      
                         ),
                       ),
@@ -445,7 +484,7 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
                                 color: bgColor,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: textBlue, 
+                                  color: cardBlue, 
                                   width: 1.5,      
                                 ),
                               ),
@@ -470,7 +509,22 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
                                     },
                                   ),
                                 )
-                              : const Center(child: Icon(Icons.add_a_photo, color: Colors.grey)),
+                              : Center(
+                                  child: Opacity(
+                                    opacity: 0.45,
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.camera_alt_rounded, size: 40, color: textBlue),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          "Tap to add a memory",
+                                          style: TextStyle(fontSize: 12, color: textBlue, fontWeight: FontWeight.w500),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                             ),
                           ),
                         ],
@@ -490,27 +544,36 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
               bottom: 0,
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 34), 
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 30), 
                 decoration: BoxDecoration(
                   color: cardBlue, 
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30), 
                     topRight: Radius.circular(30),
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: cardBlue.withOpacity(0.45),
+                      blurRadius: 20,
+                      spreadRadius: 0,
+                      offset: const Offset(0, -4),
+                    ),
+                  ],
                 ),
                 child: ElevatedButton(
                   onPressed: saveMood,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: buttonGreen,
                     foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 16), 
+                    elevation: 3,
+                    shadowColor: buttonGreen.withOpacity(0.4),
+                    padding: const EdgeInsets.symmetric(vertical: 12), 
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25), 
                       side: const BorderSide(color: Colors.white, width: 2.0),
                     ),
                   ),
-                  child: const Text("Done", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  child: const Text("Done", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
             ),
