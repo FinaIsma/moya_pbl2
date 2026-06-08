@@ -37,6 +37,7 @@ class _OpeningScreenState extends State<OpeningScreen>
   late Animation<double> _brainFloat;
   late Animation<double> _cloudLeftMove;
   late Animation<double> _cloudRightMove;
+  late Animation<double> _textScale;
 
   @override
   void initState() {
@@ -62,10 +63,13 @@ class _OpeningScreenState extends State<OpeningScreen>
       CurvedAnimation(parent: _textController, curve: Curves.easeOut),
     );
     _textSlide = Tween<Offset>(
-      begin: const Offset(0, 0.25),
+      begin: const Offset(0, 0.4),
       end: Offset.zero,
     ).animate(
-      CurvedAnimation(parent: _textController, curve: Curves.easeOut),
+      CurvedAnimation(
+        parent: _textController,
+        curve: Curves.easeOutBack,
+      ),
     );
 
     _btnController = AnimationController(
@@ -131,7 +135,16 @@ class _OpeningScreenState extends State<OpeningScreen>
         curve: Curves.easeInOut,
       ),
     );
-      }
+    _textScale = Tween<double>(
+      begin: 0.92,
+      end: 1.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _textController,
+        curve: Curves.easeOutBack,
+      ),
+    );
+  }
 
   Future<void> _startSequence() async {
     await Future.delayed(const Duration(milliseconds: 150));
@@ -190,7 +203,6 @@ class _OpeningScreenState extends State<OpeningScreen>
                 ),
               ),
             ),
-
             const SizedBox(height: 48),
 
             // ── Headline + Subtitle ────────────────────────────
@@ -198,10 +210,12 @@ class _OpeningScreenState extends State<OpeningScreen>
               opacity: _textFade,
               child: SlideTransition(
                 position: _textSlide,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 36),
-                  child: Column(
-                    children: [
+                child: ScaleTransition(
+                  scale: _textScale,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 36),
+                    child: Column(
+                      children: [
                       Text(
                         'Learn and\nGrow from\nYour Feelings',
                         textAlign: TextAlign.center,
@@ -227,6 +241,7 @@ class _OpeningScreenState extends State<OpeningScreen>
                   ),
                 ),
               ),
+            ),
             ),
 
             const SizedBox(height: 40),
@@ -335,7 +350,7 @@ class _OpeningScreenState extends State<OpeningScreen>
                           Transform.translate(
                             offset: Offset(_cloudRightMove.value, 0),
                             child: Align(
-                              alignment: const Alignment(0.8, -0.15),
+                              alignment: const Alignment(0.8,0.4),
                               child: Image.asset(
                                 'assets/images/cloud2.png',
                                 width: 110,

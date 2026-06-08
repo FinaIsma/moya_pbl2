@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // untuk ambil role user
@@ -91,6 +92,7 @@ class _LoginScreenState extends State<LoginScreen>
 
       if (userDoc.exists) {
         await _saveFcmToken(user.uid, 'users');
+        TextInput.finishAutofillContext(); // simpan kredensial ke OS
         Navigator.pushReplacementNamed(context, '/dashboard');
         return;
       }
@@ -125,6 +127,7 @@ class _LoginScreenState extends State<LoginScreen>
           }, SetOptions(merge: true));
         }
 
+        TextInput.finishAutofillContext(); // simpan kredensial ke OS
         Navigator.pushReplacementNamed(
             context,
             '/psychologist-dashboard');
@@ -139,14 +142,12 @@ class _LoginScreenState extends State<LoginScreen>
       if (mounted) {
         setState(() {
           _errorMessage = _getFriendlyError(e.code);
-          _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _errorMessage = 'Terjadi kesalahan sistem.';
-          _isLoading = false;
         });
       }
     } finally {
@@ -253,7 +254,8 @@ class _LoginScreenState extends State<LoginScreen>
                   padding: const EdgeInsets.symmetric(horizontal: 28),
                   child: Form(
                     key: _formKey,
-                    child: Column(
+                    child: AutofillGroup(
+                      child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         // Welcome Back
@@ -273,6 +275,7 @@ class _LoginScreenState extends State<LoginScreen>
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
+                          autofillHints: const [AutofillHints.email],
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             color: const Color(0xFF1A1A2E),
@@ -335,6 +338,7 @@ class _LoginScreenState extends State<LoginScreen>
                         TextFormField(
                           controller: _passwordController,
                           obscureText: _obscurePassword,
+                          autofillHints: const [AutofillHints.password],
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             color: const Color(0xFF1A1A2E),
@@ -482,10 +486,11 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ),
                       ],
-                    ),
-                  ),
+                    ),         // Column
+                  ),           // AutofillGroup
                 ),
               ),
+            ),
 
               // ── Bottom: Don't have an account ─────────────
               Padding(

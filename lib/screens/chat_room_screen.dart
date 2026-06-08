@@ -65,10 +65,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.animateTo(
+        _scrollController.jumpTo(
           _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOutCubic,
         );
       }
     });
@@ -489,6 +487,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     }
 
                     final docs = snap.data!.docs;
+                    if (docs.isNotEmpty) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _scrollToBottom();
+                      });
+                    }
 
                     if (docs.isEmpty) {
                       return Center(
