@@ -37,7 +37,7 @@ class PsychologistDetailPage extends StatelessWidget {
                               color: accentPink,
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Image.asset('assets/images/back.png'),
+                            child: const Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: Colors.black87),
                           ),
                         ),
                         const SizedBox(width: 12),
