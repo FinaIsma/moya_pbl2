@@ -79,24 +79,24 @@ class _CommunityScreenState extends State<CommunityScreen>
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-        title: Text('Hapus Post?',
+        title: Text('Delete Post?',
           style: GoogleFonts.poppins(
             fontSize: 17, fontWeight: FontWeight.w700, color: _textMain,
           ),
         ),
-        content: Text('Post ini akan dihapus permanen.',
+        content: Text('This post will be deleted permanently.',
           style: GoogleFonts.poppins(fontSize: 14, color: _textSub),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Batal',
+            child: Text('Cancel',
               style: GoogleFonts.poppins(fontSize: 14, color: _textSub),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Hapus',
+            child: Text('Delete',
               style: GoogleFonts.poppins(
                 fontSize: 14, fontWeight: FontWeight.w600,
                 color: const Color(0xFFE07B7B),
@@ -141,7 +141,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                   backgroundColor: isOwn
                       ? _secondary
                       : _getAvatarColor(uid),
-                  child: const Icon(Icons.person, color: Colors.white, size: 22),
+                  child: const Icon(Icons.person, color: Colors.white, size: 20),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -152,7 +152,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                         children: [
                           Text(displayName,
                             style: GoogleFonts.poppins(
-                              fontSize: 14, fontWeight: FontWeight.w600,
+                              fontSize: 12, fontWeight: FontWeight.w600,
                               color: _textMain,
                             ),
                           ),
@@ -179,7 +179,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                       ),
                       Text(_formatTime(ts),
                         style: GoogleFonts.poppins(
-                          fontSize: 12, color: _textSub,
+                          fontSize: 10, color: _textSub,
                         ),
                       ),
                     ],
@@ -248,7 +248,7 @@ child: Container(
                   ),
                   child: Text(data['content'] ?? '',
                   style: GoogleFonts.poppins(
-                    fontSize: 13, color: _textMain, height: 1.6,
+                    fontSize: 12, color: _textMain, height: 1.6,
                   ),
                 ),
               ),
@@ -281,7 +281,7 @@ child: Container(
                         const SizedBox(width: 4),
                         Text(_formatLikes(likes.length),
                           style: GoogleFonts.poppins(
-                            fontSize: 13, color: _textSub,
+                            fontSize: 12, color: _textSub,
                           ),
                         ),
                       ],
@@ -339,11 +339,11 @@ child: Container(
               children: [
                 const Icon(Icons.people_outline, size: 60, color: _accent),
                 const SizedBox(height: 12),
-                Text('Belum ada post.',
-                  style: GoogleFonts.poppins(fontSize: 14, color: _textSub),
-                ),
-                Text('Jadilah yang pertama berbagi!',
+                Text('No post yet.',
                   style: GoogleFonts.poppins(fontSize: 13, color: _textSub),
+                ),
+                Text('Be the First to Share!',
+                  style: GoogleFonts.poppins(fontSize: 12, color: _textSub),
                 ),
               ],
             ),
@@ -379,11 +379,11 @@ child: Container(
               children: [
                 const Icon(Icons.edit_note_outlined, size: 60, color: _accent),
                 const SizedBox(height: 12),
-                Text('Kamu belum punya post.',
-                  style: GoogleFonts.poppins(fontSize: 14, color: _textSub),
+                Text('You don\'t have any posts yet.',
+                  style: GoogleFonts.poppins(fontSize: 13, color: _textSub),
                 ),
                 const SizedBox(height: 4),
-                Text('Tap ✏️ untuk mulai berbagi.',
+                Text('Tap ✏️ to start sharing.',
                   style: GoogleFonts.poppins(fontSize: 13, color: _textSub),
                 ),
               ],
@@ -434,7 +434,7 @@ child: Container(
                       Text(
                         'Support Community',
                         style: GoogleFonts.poppins(
-                          fontSize: 22,
+                          fontSize: 19,
                           fontWeight: FontWeight.w800,
                           color: _textMain,
                         ),

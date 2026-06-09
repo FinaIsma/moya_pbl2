@@ -641,6 +641,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
+              final now = DateTime.now();
             return AlertDialog(
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
@@ -657,6 +658,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       });
                     },
                   ),
+
                   Text(
                     tempYear.toString(),
                     style: const TextStyle(
@@ -665,13 +667,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       color: Color(0xFF2D3748),
                     ),
                   ),
+
                   IconButton(
                     icon: const Icon(Icons.arrow_forward_ios, size: 16),
-                    onPressed: () {
-                      setStateDialog(() {
-                        tempYear++;
-                      });
-                    },
+                    onPressed: tempYear < now.year
+                        ? () {
+                            setStateDialog(() {
+                              tempYear++;
+                            });
+                          }
+                        : null,
                   ),
                 ],
               ),
@@ -688,18 +693,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     childAspectRatio: 2.0,
                   ),
                   itemBuilder: (context, index) {
+                    final now = DateTime.now();
+                    final isFutureMonth =
+                        tempYear == now.year &&
+                        (index + 1) > now.month;
                     bool isSelected = tempMonth == (index + 1);
                     return InkWell(
-                      onTap: () {
-                        setStateDialog(() {
-                          tempMonth = index + 1;
-                        });
-                      },
+                      onTap: isFutureMonth
+                          ? null
+                          : () {
+                              setStateDialog(() {
+                                tempMonth = index + 1;
+                              });
+                            },
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFF86B4C4) : Colors.transparent,
+                          color: isFutureMonth
+                          ? Colors.grey.shade200
+                          : isSelected
+                              ? const Color(0xFF86B4C4)
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: isSelected ? Colors.transparent : Colors.grey.shade300,
@@ -724,11 +739,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () {
+                    final now = DateTime.now();
+
+                    final selectedDate = DateTime(
+                      tempYear,
+                      tempMonth,
+                    );
+
+                    final currentDate = DateTime(
+                      now.year,
+                      now.month,
+                    );
+
+                    if (selectedDate.isAfter(currentDate)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Cannot select a future month',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+
                     setState(() {
                       _selectedMonth = tempMonth;
                       _selectedYear = tempYear;
                     });
-                    _listenToMonthlyMoods(); 
+
+                    _listenToMonthlyMoods();
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(

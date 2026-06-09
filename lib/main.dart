@@ -58,6 +58,14 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: Colors.white,
       ),
+    builder: (context, child) {
+      return MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          textScaler: const TextScaler.linear(1.0),
+        ),
+        child: child!,
+      );
+  },
       initialRoute: '/splash',
       routes: {
         '/splash':    (context) => const SplashScreen(),
