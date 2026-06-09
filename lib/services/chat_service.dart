@@ -30,22 +30,29 @@ class ChatService {
     required String psikologUid,
   }) async {
     final existing = await _firestore
-        .collection('chat_rooms')
-        .where('user_uid', isEqualTo: userUid)
-        .where('psikolog_uid', isEqualTo: psikologUid)
-        .limit(1)
-        .get();
+    .collection('chat_rooms')
+    .where('user_uid', isEqualTo: userUid)
+    .where('psikolog_uid', isEqualTo: psikologUid)
+    .where('status', isEqualTo: 'Active')
+    .limit(1)
+    .get();
 
     if (existing.docs.isNotEmpty) {
       return existing.docs.first.id;
     }
 
     final roomRef = await _firestore.collection('chat_rooms').add({
-      'user_uid':      userUid,
-      'psikolog_uid':  psikologUid,
-      'created_at':    FieldValue.serverTimestamp(),
-      'last_message':  '',
+      'user_uid': userUid,
+      'psikolog_uid': psikologUid,
+
+      'status': 'Active',
+
+      'created_at': FieldValue.serverTimestamp(),
+      'last_message': '',
       'last_message_at': FieldValue.serverTimestamp(),
+
+      'unread_user': 0,
+      'unread_psikolog': 0,
     });
 
     return roomRef.id;
@@ -79,39 +86,127 @@ class ChatService {
         .snapshots();
   }
 
-  // ─── Kirim pesan teks ─────────────────────────────────────
-  static Future<void> sendText({
-    required String roomId,
-    required String text,
-  }) async {
-    if (text.trim().isEmpty) return;
+static Stream<DocumentSnapshot<Map<String, dynamic>>> streamRoom(
+  String roomId,
+) {
+  return _firestore
+      .collection('chat_rooms')
+      .doc(roomId)
+      .snapshots();
+}
 
-    final batch = _firestore.batch();
+static Future<void> endChatSession(
+  String roomId,
+) async {
+  await _firestore
+      .collection('chat_rooms')
+      .doc(roomId)
+      .update({
+    'status': 'Closed',
+    'ended_at': FieldValue.serverTimestamp(),
+  });
+}
 
-    final msgRef = _firestore
-        .collection('chat_rooms')
-        .doc(roomId)
-        .collection('messages')
-        .doc();
+static Future<void> submitRating({
+  required String psikologId,
+  required String userId,
+  required double rating,
+}) async {
 
-    batch.set(msgRef, {
-      'sender_uid': currentUid,
-      'type':       'text',
-      'content':    text.trim(),
-      'is_read':    false,
-      'created_at': FieldValue.serverTimestamp(),
-    });
+  final ratingRef = _firestore
+      .collection('psychologists')
+      .doc(psikologId)
+      .collection('ratings')
+      .doc(userId);
 
-    final roomRef = _firestore.collection('chat_rooms').doc(roomId);
-    batch.update(roomRef, {
-      'last_message':    text.trim(),
-      'last_message_at': FieldValue.serverTimestamp(),
-    });
+  await ratingRef.set({
+    'rating': rating,
+    'created_at': FieldValue.serverTimestamp(),
+  });
 
-    await batch.commit();
-    await _sendNotification(roomId: roomId);
+  final snapshot = await _firestore
+      .collection('psychologists')
+      .doc(psikologId)
+      .collection('ratings')
+      .get();
+
+  double total = 0;
+
+  for (final doc in snapshot.docs) {
+    total +=
+        (doc.data()['rating'] as num)
+            .toDouble();
   }
 
+  final average =
+      snapshot.docs.isEmpty
+          ? 0
+          : total / snapshot.docs.length;
+
+  await _firestore
+      .collection('psychologists')
+      .doc(psikologId)
+      .set({
+    'rating': average,
+    'totalRatings': snapshot.docs.length,
+  }, SetOptions(merge: true));
+}
+
+  // ─── Kirim pesan teks ─────────────────────────────────────
+static Future<void> sendText({
+  required String roomId,
+  required String text,
+}) async {
+
+  final roomDoc = await _firestore
+      .collection('chat_rooms')
+      .doc(roomId)
+      .get();
+
+  final roomData = roomDoc.data();
+
+  if (roomData?['status'] != 'Active') {
+    throw Exception('Consultation session has ended');
+  }
+
+  if (text.trim().isEmpty) return;
+
+  if (roomData == null) return;
+
+  if (roomData['status'] == 'Ended') {
+    throw Exception('Consultation session has ended');
+  }
+
+  final batch = _firestore.batch();
+
+  final msgRef = _firestore
+      .collection('chat_rooms')
+      .doc(roomId)
+      .collection('messages')
+      .doc();
+
+  batch.set(msgRef, {
+    'sender_uid': currentUid,
+    'type': 'text',
+    'content': text.trim(),
+    'is_read': false,
+    'created_at': FieldValue.serverTimestamp(),
+  });
+
+  batch.update(
+    _firestore.collection('chat_rooms').doc(roomId),
+    {
+      'last_message': text.trim(),
+      'last_message_at': FieldValue.serverTimestamp(),
+    },
+  );
+
+  await batch.commit();
+
+  await _sendNotification(roomId: roomId);
+}
+
+  
   // ─── Upload file/gambar ke Cloudinary ────────────────────
   static Future<String?> _uploadToCloudinary({
     required File file, 
@@ -350,4 +445,5 @@ if (recipientUid == currentUid) return;
     }),
   );
 }
+
 }

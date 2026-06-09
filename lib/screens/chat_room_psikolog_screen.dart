@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/chat_service.dart';
 import 'dart:io';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
@@ -32,6 +33,9 @@ class _ChatRoomPsikologScreenState extends State<ChatRoomPsikologScreen> {
   final _scrollController = ScrollController();
   final _currentUid       = FirebaseAuth.instance.currentUser?.uid ?? '';
   bool _showAttachMenu    = false;
+  bool _isSessionClosed = false;
+  
+  StreamSubscription? _roomSubscription;
 
   static const _primary   = Color(0xFF9ECAD6);
   static const _secondary = Color(0xFF748DAE);
@@ -54,12 +58,24 @@ class _ChatRoomPsikologScreenState extends State<ChatRoomPsikologScreen> {
       .collection('chat_rooms')
       .doc(widget.roomId)
       .set({'unread_psikolog': 0}, SetOptions(merge: true));
+       _roomSubscription = ChatService.streamRoom(widget.roomId)
+        .listen((doc) {
+          if (!mounted) return;
+
+          final data = doc.data();
+
+          setState(() {
+            final status = data?['status'] ?? '';
+            _isSessionClosed = status != 'Active';
+          });
+        });
   }
 
   @override
   void dispose() {
     _textController.dispose();
     _scrollController.dispose();
+    _roomSubscription?.cancel();
     super.dispose();
   }
 
@@ -160,6 +176,7 @@ class _ChatRoomPsikologScreenState extends State<ChatRoomPsikologScreen> {
 }
 
   Future<void> _sendText() async {
+if (_isSessionClosed) return;
     final text = _textController.text.trim();
     if (text.isEmpty) return;
     _textController.clear();
@@ -182,12 +199,14 @@ class _ChatRoomPsikologScreenState extends State<ChatRoomPsikologScreen> {
   }
 
   Future<void> _sendImage() async {
+  if (_isSessionClosed) return;
     setState(() => _showAttachMenu = false);
     await ChatService.sendImage(roomId: widget.roomId);
     _scrollToBottom();
   }
 
   Future<void> _sendDocument() async {
+ if (_isSessionClosed) return;
     setState(() => _showAttachMenu = false);
     await ChatService.sendDocument(roomId: widget.roomId);
     _scrollToBottom();
@@ -494,7 +513,7 @@ if (type == 'text') {
                     if (docs.isEmpty) {
                       return Center(
                         child: Text(
-                          'Mulai percakapan!',
+                          'Start Conversation!',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             color: _textSub,
@@ -612,8 +631,23 @@ if (type == 'text') {
                   ],
                 ),
               ),
+                if (_isSessionClosed)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                color: Colors.red.shade50,
+                child: Text(
+                  'This consultation session has ended',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.red,
+                  ),
+                ),
+              ),
 
             // ── Input bar ─────────────────────────────────────
+            if (!_isSessionClosed)
             Container(
               padding: const EdgeInsets.only(
                 left: 12, right: 12, top: 10,
