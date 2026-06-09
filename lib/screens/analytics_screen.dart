@@ -416,15 +416,32 @@ class _AnalyticsPageState extends State<AnalyticsScreen> {
               children: [
                 const Text("Average Score", style: TextStyle(color: Color(0xFF3C3C3C), fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 2),
-                RichText(
-                  text: TextSpan(
-                      children: [
-                        TextSpan(text: monthlyAvgScore.toStringAsFixed(1), style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Color(0xFF3C3C3C))),
-                        const TextSpan(text: " / 5", style: TextStyle(fontSize: 30, color: Color(0xFF3C3C3C))),
-                      ]
-                  ),
-                ),
-                Text("$sign${diff.toStringAsFixed(1)} vs Last Month", style: const TextStyle(color: Color(0xFF3C3C3C), fontSize: 12)),
+                FittedBox(
+  fit: BoxFit.scaleDown,
+  alignment: Alignment.centerLeft,
+  child: RichText(
+    text: TextSpan(
+      children: [
+        TextSpan(
+          text: monthlyAvgScore.toStringAsFixed(1),
+          style: const TextStyle(
+            fontSize: 30,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF3C3C3C),
+          ),
+        ),
+        const TextSpan(
+          text: " / 5",
+          style: TextStyle(
+            fontSize: 30,
+            color: Color(0xFF3C3C3C),
+          ),
+        ),
+      ],
+    ),
+  ),
+),
+Text("$sign${diff.toStringAsFixed(1)} vs Last Month", style: const TextStyle(color: Color(0xFF3C3C3C), fontSize: 10)),
               ],
             ),
           ),
@@ -452,7 +469,7 @@ Widget _buildBestDay() {
                 const Text("Best Day", style: TextStyle(color: Color(0xFF3C3C3C), fontWeight: FontWeight.bold, fontSize: 16)),
                 Text(
                   weeklyBestDayName != "-" ? "avg ${weeklyBestDayScore.toStringAsFixed(1)} / 5" : "No data yet", 
-                  style: const TextStyle(color: Colors.white, fontSize: 12)
+                  style: const TextStyle(color: Colors.white, fontSize: 10)
                 ),
               ],
             ),
@@ -487,8 +504,20 @@ Widget _buildBestDay() {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text("Streak", style: TextStyle(color: Colors.black87.withOpacity(hasFilledToday ? 0.75 : 0.5), fontWeight: FontWeight.bold, fontSize: 18)),
-                Text("$streakDays Days", style: TextStyle(color: Colors.black87.withOpacity(hasFilledToday ? 0.75 : 0.5), fontWeight: FontWeight.bold, fontSize: 30)),
-              ],
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "$streakDays Days",
+                  style: TextStyle(
+                    color: Colors.black87.withOpacity(
+                      hasFilledToday ? 0.75 : 0.5,
+                    ),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 30,
+                  ),
+                ),
+              )              ],
             ),
           )
         ],

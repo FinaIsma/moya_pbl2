@@ -359,7 +359,7 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
                               crossAxisCount: 4,
                               mainAxisSpacing: 10,
                               crossAxisSpacing: 10,
-                              childAspectRatio: 1.25,
+                              childAspectRatio: 0.85,
                             ),
                             itemBuilder: (context, index) {
                               final item = emotions[index];
