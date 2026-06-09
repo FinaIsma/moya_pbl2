@@ -4,10 +4,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/chat_service.dart';
 import 'dart:io';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
 class ChatRoomScreen extends StatefulWidget {
   final String roomId;
@@ -27,11 +29,15 @@ class ChatRoomScreen extends StatefulWidget {
   State<ChatRoomScreen> createState() => _ChatRoomScreenState();
 }
 
+
 class _ChatRoomScreenState extends State<ChatRoomScreen> {
   final _textController  = TextEditingController();
   final _scrollController = ScrollController();
   final _currentUid      = FirebaseAuth.instance.currentUser?.uid ?? '';
   bool _showAttachMenu   = false;
+  bool _isSessionClosed = false;
+  
+  StreamSubscription? _roomSubscription;
 
   static const _primary   = Color(0xFF9ECAD6);
   static const _secondary = Color(0xFF748DAE);
@@ -53,12 +59,24 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         .collection('chat_rooms')
         .doc(widget.roomId)
         .set({'unread_user': 0}, SetOptions(merge: true));
+        _roomSubscription = ChatService.streamRoom(widget.roomId)
+        .listen((doc) {
+          if (!mounted) return;
+
+          final data = doc.data();
+
+          setState(() {
+            final status = data?['status'] ?? '';
+            _isSessionClosed = status != 'Active';
+          });
+        });
   }
 
   @override
   void dispose() {
     _textController.dispose();
     _scrollController.dispose();
+    _roomSubscription?.cancel();
     super.dispose();
   }
 
@@ -162,6 +180,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 }
 
   Future<void> _sendText() async {
+    if (_isSessionClosed) return;
     final text = _textController.text.trim();
     if (text.isEmpty) return;
     _textController.clear();
@@ -175,7 +194,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       'last_message_at': FieldValue.serverTimestamp(),
       'psikolog_uid': widget.psikologUid, 
       'user_uid': _currentUid,            
-      'status': 'Active',
+      // 'status': 'Active',
       'unread_psikolog': FieldValue.increment(1), 
     }, SetOptions(merge: true));
     
@@ -183,12 +202,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _sendImage() async {
+     if (_isSessionClosed) return;
     setState(() => _showAttachMenu = false);
     await ChatService.sendImage(roomId: widget.roomId);
     _scrollToBottom();
   }
 
   Future<void> _sendDocument() async {
+ if (_isSessionClosed) return; 
     setState(() => _showAttachMenu = false);
     await ChatService.sendDocument(roomId: widget.roomId);
     _scrollToBottom();
@@ -415,6 +436,118 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     );
   }
 
+  Future<void> _showEndSessionDialog()
+  async {
+    final confirm =
+        await showDialog<bool>(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          title: const Text(
+            'End Session?',
+          ),
+          content: const Text(
+            'Consultation will be ended.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () =>
+                  Navigator.pop(
+                    context,
+                    false,
+                  ),
+              child: const Text(
+                'Cancel',
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () =>
+                  Navigator.pop(
+                    context,
+                    true,
+                  ),
+              child: const Text(
+                'End',
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true) {
+      await ChatService.endChatSession(
+        widget.roomId,
+      );
+
+      _showRatingDialog();
+    }
+  }
+
+  Future<void> _showRatingDialog()
+async {
+  double rating = 5;
+
+  await showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) {
+      return AlertDialog(
+        title: const Text(
+          'Write your Rating',
+        ),
+        content: StatefulBuilder(
+          builder: (
+            context,
+            setStateDialog,
+          ) {
+            return RatingBar.builder(
+              initialRating: rating,
+              minRating: 1,
+              allowHalfRating: true,
+              itemCount: 5,
+              itemBuilder:
+                  (_, __) =>
+                      const Icon(
+                        Icons.star,
+                        color: Colors.amber,
+                      ),
+              onRatingUpdate:
+                  (value) {
+                setStateDialog(() {
+                  rating = value;
+                });
+              },
+            );
+          },
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () async {
+              await ChatService.submitRating(
+                psikologId:
+                    widget.psikologUid,
+                userId:
+                    _currentUid,
+                rating: rating,
+              );
+
+              if (mounted) {
+                Navigator.pop(
+                  context,
+                );
+              }
+            },
+            child: const Text(
+              'Submit',
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -457,6 +590,21 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  if (!_isSessionClosed)
+                  TextButton.icon(
+                    onPressed: _showEndSessionDialog,
+                    icon: const Icon(
+                      Icons.stop_circle_outlined,
+                      color: Colors.red,
+                      size: 18,
+                    ),
+                    label: const Text(
+                      'End',
+                      style: TextStyle(
+                        color: Colors.red,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -496,7 +644,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     if (docs.isEmpty) {
                       return Center(
                         child: Text(
-                          'Mulai percakapan!',
+                          'Start Conversation!',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             color: _textSub,
@@ -614,34 +762,50 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 ),
               ),
 
-            // ── Input bar ─────────────────────────────────────
-            Container(
-              padding: const EdgeInsets.only(
-                left: 12, right: 12, top: 10,
-                bottom: 10,
-              ),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                border: Border(top: BorderSide(color: Color(0xFFE4ECF0))),
-              ),
-              child: Row(
-                children: [
-                  // + button
-                  GestureDetector(
-                    onTap: () => setState(
-                      () => _showAttachMenu = !_showAttachMenu,
-                    ),
-                    child: Container(
-                      width: 42, height: 42,
-                      decoration: const BoxDecoration(
-                        color: _secondary, shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        _showAttachMenu ? Icons.close : Icons.add,
-                        color: Colors.white, size: 22,
-                      ),
-                    ),
+              if (_isSessionClosed)
+               Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                color: Colors.red.shade50,
+                child: Text(
+                  'This consultation session has ended',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.red,
                   ),
+                ),
+              ),
+
+            // ── Input bar ─────────────────────────────────────
+ if (!_isSessionClosed)
+                 Container(
+                padding: const EdgeInsets.only(
+                  left: 12, right: 12, top: 10,
+                  bottom: 10,
+                ),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(top: BorderSide(color: Color(0xFFE4ECF0))),
+                ),
+                child: Row(
+                  children: [
+                    // + button
+                    GestureDetector(
+                      onTap: () => setState(
+                        () => _showAttachMenu = !_showAttachMenu,
+                      ),
+                      child: Container(
+                        width: 42, height: 42,
+                        decoration: const BoxDecoration(
+                          color: _secondary, shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          _showAttachMenu ? Icons.close : Icons.add,
+                          color: Colors.white, size: 22,
+                        ),
+                      ),
+                    ),
                   const SizedBox(width: 8),
 
                   // Text field
